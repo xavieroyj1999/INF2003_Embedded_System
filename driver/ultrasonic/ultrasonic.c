@@ -30,7 +30,7 @@ bool repeating_timer_callback(struct repeating_timer *t) {
         //Cancel repeating_timer for now
         bool cancelled = cancel_repeating_timer(&g_timer);
         //Stop car from crashing
-        printf("Yes its less than 5cm");
+        printf("Yes its less than 5cm\n");
         //Continue repeating timer
         add_repeating_timer_ms(1000, repeating_timer_callback, NULL, &g_timer);
     }
