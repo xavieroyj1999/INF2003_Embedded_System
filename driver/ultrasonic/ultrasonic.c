@@ -42,11 +42,12 @@ bool repeating_timer_callback(struct repeating_timer *t) {
 //Configure pins
 void init_gpio(){
     gpio_init(TRIG_PIN);
+    //Initialise trigger pin as output
     gpio_set_dir(TRIG_PIN, GPIO_OUT);
     //Set pin as low, dont output yet
     gpio_put(TRIG_PIN, 0);
-
     gpio_init(ECHO_PIN);
+    //Initialise trigger pin as input
     gpio_set_dir(ECHO_PIN, GPIO_IN);
 }
 
