@@ -7,11 +7,11 @@
 #define PRINT_TASK (tskIDLE_PRIORITY + 1UL)
 
 //General Definations
-#define CONVERT_TO_MILLISECONDS 1000
+#define CONVERT_TO_MICROSECONDS 1000
 #define DEBOUNCE_TIME_MS 50
 
 // Wheel Encoder Configs
-#define ONE_INTERRUPT_CM 1
+#define ONE_INTERRUPT 1
 
 // Left Wheel Encoder Pins
 #define LEFT_ENCODER_PIN 14
@@ -42,10 +42,10 @@ void init_encoder() {
 void left_encoder_callback(uint gpio, uint32_t events) {
     static uint32_t last_time = 0;
     uint32_t current_time = time_us_32();
-    if (current_time - last_time < DEBOUNCE_TIME_MS * CONVERT_TO_MILLISECONDS) {
+    if (current_time - last_time < DEBOUNCE_TIME_MS * CONVERT_TO_MICROSECONDS) {
         return;
     }
-    distance_travelled += ONE_INTERRUPT_CM;
+    distance_travelled += ONE_INTERRUPT;
     last_time = current_time;
     left_encoder_interrupts++;
 }
@@ -53,10 +53,10 @@ void left_encoder_callback(uint gpio, uint32_t events) {
 void right_encoder_callback(uint gpio, uint32_t events) {
     static uint32_t last_time = 0;
     uint32_t current_time = time_us_32();
-    if (current_time - last_time < DEBOUNCE_TIME_MS * CONVERT_TO_MILLISECONDS) {
+    if (current_time - last_time < DEBOUNCE_TIME_MS * CONVERT_TO_MICROSECONDS) {
         return;
     }
-    distance_travelled += ONE_INTERRUPT_CM;
+    distance_travelled += ONE_INTERRUPT;
     last_time = current_time;
     right_encoder_interrupts++;
 }
