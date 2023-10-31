@@ -19,10 +19,12 @@
 // Right Wheel Encoder Pins
 #define RIGHT_ENCODER_PIN 15
 
+// Variables to track speed of each wheel based off interrupts
 uint8_t left_encoder_interrupts = 0;
 uint8_t right_encoder_interrupts = 0;
 uint32_t distance_travelled = 0;
 
+// Initialise pins
 void init_encoder() {
     gpio_init(LEFT_ENCODER_PIN);
     gpio_set_dir(LEFT_ENCODER_PIN, GPIO_IN);
@@ -30,6 +32,13 @@ void init_encoder() {
     gpio_set_dir(RIGHT_ENCODER_PIN, GPIO_IN);
 }
 
+/**
+ * @brief Callback function for the left and right wheel encoder interrupt.
+ *
+ * These functions are called whenever an interrupt event is triggered by the
+ * wheel encoders. They update the distance traveled by the robot and
+ * keep track of the number of interrupts.
+ */
 void left_encoder_callback(uint gpio, uint32_t events) {
     static uint32_t last_time = 0;
     uint32_t current_time = time_us_32();
@@ -52,7 +61,7 @@ void right_encoder_callback(uint gpio, uint32_t events) {
     right_encoder_interrupts++;
 }
 
-void print_task(void* pvParameters) {
+void performance_track_task(void* pvParameters) {
     while(1) {
         vTaskDelay(1000);
         printf("Distance: %d cm\n", distance_travelled);
@@ -64,8 +73,8 @@ void print_task(void* pvParameters) {
 }
 
 void start_tasks() {
-    TaskHandle_t task_print;
-    xTaskCreate(print_task, "print thread", configMINIMAL_STACK_SIZE, NULL, PRINT_TASK, &task_print);
+    TaskHandle_t task_performance;
+    xTaskCreate(performance_tracking_task, "track performance thread", configMINIMAL_STACK_SIZE, NULL, PERFORMANCE_TRACK_TASK, &task_performance);
 
     vTaskStartScheduler();
 }
