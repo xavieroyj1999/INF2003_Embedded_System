@@ -6,6 +6,8 @@
 #include "task.h"
 #include "message_buffer.h"
 
+#include <FreeRTOSConfig.h>
+
 #define ADC_CHANNEL 0
 #define IR_PIN 26
 

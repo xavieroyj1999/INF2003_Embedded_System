@@ -16,4 +16,4 @@ pico_add_extra_outputs(motor)
 
 pico_enable_stdio_usb(motor 1)
 
-example_auto_set_url(motor)
+target_include_directories(motor PUBLIC ${PROJECT_SOURCE_DIR}/include)
