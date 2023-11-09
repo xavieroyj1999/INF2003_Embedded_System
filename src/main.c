@@ -1,25 +1,34 @@
-/**
- * Copyright (c) 2022 Raspberry Pi (Trading) Ltd.
- *
- * SPDX-License-Identifier: BSD-3-Clause
- */
-#include "pico/stdlib.h"
-#include "pico/cyw43_arch.h"
-#include "freeRTOS.h"
+#include <stdio.h> 
+#include <stdlib.h>
+#include "pico/stdlib.h" 
+#include "hardware/i2c.h"
+#include "hardware/pwm.h"
+#include "hardware/gpio.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "math.h"
 
-#include <FreeRTOSConfig.h>
-#include <blink.h>
+#include <declarations.h>
+#include <global_variables.h>
+#include <function_proto.h>
+#include <initialize.h>
+#include <motor_control.h>
+#include <barcode.h>
+#include <interrupt.h>
+#include <magnometer.h>
+#include <init_task.h>
 
 int main()
 {
     stdio_init_all();
-    if (cyw43_arch_init())
-    {
-        printf("Wi-Fi init failed");
-        return -1;
-    }
-    while (true)
-    {
-        blink();
-    }
+
+    high_pin_init();
+    motor_control_init();
+    encoder_init();
+    magnetometer_init();
+
+    start_interrupts();
+    start_tasks();
+
+    return 0;
 }

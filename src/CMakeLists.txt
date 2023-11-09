@@ -2,9 +2,11 @@ add_executable(main main.c)
 
 # Add required libraries
 target_link_libraries(main
-    pico_stdlib              # for core functionality
-    pico_cyw43_arch_none     # we need Wifi to access the GPIO, but we don't need anything else
-    FreeRTOS-Kernel-Heap4 
+    pico_stdlib
+    hardware_i2c
+    hardware_pwm
+    FreeRTOS-Kernel-Heap4
+    m
 )
 
 # Create map/bin/hex file etc.
