@@ -16,4 +16,4 @@ pico_add_extra_outputs(irline)
 
 pico_enable_stdio_usb(irline 1)
 
-example_auto_set_url(irline)
+target_include_directories(irline PUBLIC ${PROJECT_SOURCE_DIR}/include)

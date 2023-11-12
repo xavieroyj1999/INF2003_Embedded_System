@@ -15,4 +15,4 @@ pico_add_extra_outputs(encoder)
 
 pico_enable_stdio_usb(encoder 1)
 
-example_auto_set_url(encoder)
+target_include_directories(encoder PUBLIC ${PROJECT_SOURCE_DIR}/include)

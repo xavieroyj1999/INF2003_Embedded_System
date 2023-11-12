@@ -4,6 +4,8 @@
 #include "pico/stdlib.h" 
 #include "hardware/i2c.h" 
 #include "math.h"
+
+#include <FreeRTOSConfig.h>
  
 #define I2C_PIN_SDA 2 
 #define I2C_PIN_SCL 3
