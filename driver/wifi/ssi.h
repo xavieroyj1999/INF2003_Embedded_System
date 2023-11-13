@@ -1,9 +1,14 @@
 #include "lwip/apps/httpd.h"
 #include "pico/cyw43_arch.h"
 #include "hardware/adc.h"
+#include "stdint.h"  // Include the header for uint32_t
+#include "global_variables.h"
+
+// Declare distance_travelled (extern indicates that it's declared elsewhere)
+// extern uint32_t distance_travelled;
 
 // SSI tags - tag length limited to 8 bytes by default
-const char * ssi_tags[] = {"volt","temp","led"};
+const char * ssi_tags[] = {"volt", "temp", "led", "distance"};
 
 u16_t ssi_handler(int iIndex, char *pcInsert, int iInsertLen) {
   size_t printed;
@@ -34,6 +39,11 @@ u16_t ssi_handler(int iIndex, char *pcInsert, int iInsertLen) {
         printed = snprintf(pcInsert, iInsertLen, "OFF");
         printf("LED is off \n");
       }
+    }
+  case 3: // distance
+    {
+      printed = snprintf(pcInsert, iInsertLen, "%d", g_distance_travelled);
+      printf(" Distance: %d \n", g_distance_travelled);
     }
     break;
   default:

@@ -3,6 +3,9 @@
 #include "hardware/gpio.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "lwip/apps/httpd.h"
+#include "ssi.h"
+#include "global_variables.h"
 
 #include <FreeRTOSConfig.h>
 
@@ -71,6 +74,10 @@ void performance_track_task(void* pvParameters) {
         printf("Right Speed: %d interrupts/second\n", right_encoder_interrupts);
         left_encoder_interrupts = 0;
         right_encoder_interrupts = 0;
+        g_distance_travelled = distance_travelled;
+
+        // Update the distance in the SSI handler
+        ssi_handler(3, "distance", 8);
     }
 }
 
@@ -84,6 +91,8 @@ void start_tasks() {
 int main() {
     stdio_init_all();
     init_encoder();
+    ssi_handler(3, "distance", 8);
+    // ssi_init();
 
     gpio_set_irq_enabled_with_callback(LEFT_ENCODER_PIN, GPIO_IRQ_EDGE_RISE, true, &left_encoder_callback);
     gpio_set_irq_enabled_with_callback(RIGHT_ENCODER_PIN, GPIO_IRQ_EDGE_RISE, true, &right_encoder_callback);
