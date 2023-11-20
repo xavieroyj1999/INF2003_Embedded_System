@@ -36,6 +36,7 @@ static SemaphoreHandle_t main_task_semaphore;
 static SemaphoreHandle_t barcode_task_complete;
 static SemaphoreHandle_t magnetometer_task;
 static SemaphoreHandle_t straight_path_task_semaphore;
+static SemaphoreHandle_t wall_semaphore;
 
 void interrupt_callback(uint gpio, uint32_t events) {
     // Right Encoder Distance Counter
@@ -43,7 +44,6 @@ void interrupt_callback(uint gpio, uint32_t events) {
     if (events & GPIO_IRQ_EDGE_RISE && gpio == RENCODER_PIN) {
         static uint32_t rencoder_last_time = 0;
         if (current_time - rencoder_last_time > DEBOUNCE_TIME) {
-            g_distance_travelled += ONE_INTERRUPT;
             rencoder_last_time = current_time;
             g_right_encoder_interrupts++;
         }
@@ -53,7 +53,6 @@ void interrupt_callback(uint gpio, uint32_t events) {
     if (events & GPIO_IRQ_EDGE_RISE && gpio == LENCODER_PIN) {
         static uint32_t lencoder_last_time = 0;
         if (current_time - lencoder_last_time > DEBOUNCE_TIME) {
-            g_distance_travelled += ONE_INTERRUPT;
             lencoder_last_time = current_time;
             g_left_encoder_interrupts++;
         }
@@ -69,7 +68,7 @@ void interrupt_callback(uint gpio, uint32_t events) {
             right_wheel_backward();
             gpio_set_irq_enabled_with_callback(RENCODER_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
         }
-        g_inital_degree = magneto_read();
+        g_initial_degree = magneto_read();
         generateDegreeThresholds();
         right_wheel_stop();
         gpio_set_irq_enabled_with_callback(RENCODER_PIN, GPIO_IRQ_EDGE_RISE, true, &interrupt_callback);
@@ -85,7 +84,7 @@ void interrupt_callback(uint gpio, uint32_t events) {
             left_wheel_backward();
             gpio_set_irq_enabled_with_callback(LENCODER_PIN, GPIO_IRQ_EDGE_RISE, true, &interrupt_callback);
         }
-        g_inital_degree = magneto_read();
+        g_initial_degree = magneto_read();
         generateDegreeThresholds();
         left_wheel_stop();
         gpio_set_irq_enabled_with_callback(LENCODER_PIN, GPIO_IRQ_EDGE_RISE, true, &interrupt_callback);
@@ -101,7 +100,8 @@ void interrupt_callback(uint gpio, uint32_t events) {
             distance = calculate_distance(time_elapsed);
             if (distance < 5)
             {
-                printf("Too close!\n");
+                xSemaphoreGive(wall_semaphore);
+                g_wall_detected = true;
             }
         }
         else if (events == GPIO_IRQ_EDGE_RISE)
@@ -238,10 +238,12 @@ void straight_path_task(void* pvParameters) {
         current_left_wheel_count = g_left_encoder_interrupts;
         current_right_wheel_count = g_right_encoder_interrupts;
         while(count <= 200) {
-            left_wheel_forward();
-            right_wheel_forward();
-            vTaskDelay(pdMS_TO_TICKS(50));
-            count++;
+            if (!g_wall_detected) {
+                left_wheel_forward();
+                right_wheel_forward();
+                vTaskDelay(pdMS_TO_TICKS(50));
+                count++;
+            }
         }
         count = 0;
         left_wheel_stop();
@@ -359,7 +361,6 @@ void snap_threshold_task() {
 }
 
 void barcode_task(void* pvParameters) {
-    // If rising edge, take time interval between rising and falling edge, then store the bit that will be << based on odd_bit_index
     bool start_count = false;
     bool last_color_black = true;
     uint8_t odd_bit_index = 0;
@@ -384,14 +385,6 @@ void barcode_task(void* pvParameters) {
                 } else if (adc_value < COLOR_THRESHOLD) {
                     white_count++;
                 }
-
-                // if (black_count >250) {
-                //     odd_bit_index = even_bit_index = 0;
-                //     black_count = white_count = 0;
-                //     start_count = false;
-                //     last_color_black = true;
-                //     while(adc_read() > COLOR_THRESHOLD);
-                // }
 
                 if(adc_value >= COLOR_THRESHOLD && !last_color_black && start_count) {
                     even_count[even_bit_index] = white_count;
@@ -611,6 +604,21 @@ void main_task() {
         case '7': //Ultrasonic
             gpio_set_irq_enabled_with_callback(ECHO_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &interrupt_callback);
             xSemaphoreGive(straight_path_task_semaphore);
+            if (xSemaphoreTake(wall_semaphore, pdMS_TO_TICKS(10000)) == pdPASS) {
+            gpio_set_irq_enabled_with_callback(ECHO_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, false, &interrupt_callback);
+                direction = SOUTH;
+                xMessageBufferSend(
+                    g_leftWheelBuffer,
+                    (void *) &direction,
+                    sizeof( direction ),
+                    portMAX_DELAY );
+                xMessageBufferSend(
+                    g_rightWheelBuffer,
+                    (void *) &direction,
+                    sizeof( direction ),
+                    portMAX_DELAY );
+                g_wall_detected = false;
+            }
             xSemaphoreTake(main_task_semaphore, portMAX_DELAY);
             gpio_set_irq_enabled_with_callback(ECHO_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, false, &interrupt_callback);
         default:
@@ -656,6 +664,7 @@ void start_tasks() {
     TaskHandle_t task_right_wheel;
     xTaskCreate(right_wheel_task, "right wheel thread", configMINIMAL_STACK_SIZE, NULL, MAIN_TASK, &task_right_wheel);
 
+    wall_semaphore = xSemaphoreCreateBinary();
     TaskHandle_t ultrasonic_task;
     xTaskCreate(generate_sound_task, "ultrasonic thread", configMINIMAL_STACK_SIZE, NULL, MAIN_TASK, &ultrasonic_task);
 
