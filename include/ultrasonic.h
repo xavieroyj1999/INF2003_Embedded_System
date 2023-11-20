@@ -8,3 +8,11 @@ double calculate_distance(uint64_t time_elapsed) {
     printf("Distance: %f cm\n", distance);
     return distance;
 }
+
+void generate_sound_task(void *pvParameters) {
+    vTaskDelay(1000);
+    gpio_put(TRIG_PIN, HIGH);
+    vTaskDelay(1);
+    gpio_put(TRIG_PIN, LOW);
+    vTaskSuspend(NULL); 
+}

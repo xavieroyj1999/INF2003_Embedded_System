@@ -7,8 +7,8 @@
 
 #include <FreeRTOSConfig.h>
  
-#define I2C_PIN_SDA 2 
-#define I2C_PIN_SCL 3
+#define I2C_PIN_SDA 18
+#define I2C_PIN_SCL 19
 
 #define I2C_PORT i2c1
 

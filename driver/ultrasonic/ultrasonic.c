@@ -12,6 +12,8 @@
 #define TRIG_PIN 6
 #define ECHO_PIN 7
 
+#define MAGNETO_3V3_PIN 8
+
 #define HIGH 1
 #define LOW 0
 
@@ -38,6 +40,9 @@ void init_gpio(){
     gpio_put(TRIG_PIN, LOW);
     gpio_init(ECHO_PIN);
     gpio_set_dir(ECHO_PIN, GPIO_IN);
+    gpio_init(MAGNETO_3V3_PIN);
+    gpio_set_dir(MAGNETO_3V3_PIN, GPIO_OUT);
+    gpio_put(MAGNETO_3V3_PIN, HIGH);
 }
 
 void handle_sound_interrupt(uint gpio, uint32_t events) {

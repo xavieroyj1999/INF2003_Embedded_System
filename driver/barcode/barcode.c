@@ -2,6 +2,10 @@
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
 #include "hardware/adc.h"
+#include "FreeRTOS.h"
+#include "task.h"
+
+#include <FreeRTOSConfig.h>
 
 #define CONVERT_TO_MILLISECONDS 1000
 #define DEBOUNCE_TIME_MS 50
@@ -9,6 +13,12 @@
 #define LOW 0
 #define HIGH 1
 
+#define IR_PIN 26
+#define IR_ADC_CHANNEL 0
+
+#define COLOR_THRESHOLD 1500
+
+#define BARCODE_TASK_PRIORITY (tskIDLE_PRIORITY + 1UL)
 
 // For Decoder
 enum white_bar{
@@ -90,27 +100,24 @@ char code_39_decoder(int odd_bit, int even_bit) {
 
 void init_IR_barcode() {
     adc_init();
-    gpio_init(26);
-    gpio_set_dir(26, GPIO_IN);
-
-    gpio_init(22);
-    gpio_set_dir(22, GPIO_OUT);
-    gpio_put(22, HIGH); 
+    gpio_init(IR_PIN);
+    gpio_set_dir(IR_PIN, GPIO_IN);
+    adc_select_input(IR_ADC_CHANNEL);
 }
 
-uint8_t determine_odd_bit(uint32_t odd_time[]) {
+uint8_t determine_odd_bit(uint16_t odd_count[]) {
     int highest_indices[2] = {0, 1};
-    uint32_t highest_times[2] = {odd_time[0], odd_time[1]};
+    uint16_t highest_count[2] = {odd_count[0], odd_count[1]};
 
     // Find the two highest times and their indices
     for (int i = 2; i < 5; i++) {
-        if (odd_time[i] > highest_times[0]) {
-            highest_times[1] = highest_times[0];
+        if (odd_count[i] > highest_count[0]) {
+            highest_count[1] = highest_count[0];
             highest_indices[1] = highest_indices[0];
-            highest_times[0] = odd_time[i];
+            highest_count[0] = odd_count[i];
             highest_indices[0] = i;
-        } else if (odd_time[i] > highest_times[1]) {
-            highest_times[1] = odd_time[i];
+        } else if (odd_count[i] > highest_count[1]) {
+            highest_count[1] = odd_count[i];
             highest_indices[1] = i;
         }
     }
@@ -119,71 +126,84 @@ uint8_t determine_odd_bit(uint32_t odd_time[]) {
     return (1 << (4 - highest_indices[0])) | (1 << (4- highest_indices[1]));
 }
 
-uint8_t determine_even_bit(uint32_t even_time[]) {
+uint8_t determine_even_bit(uint16_t even_count[]) {
     int highest_index = 0;
-    uint32_t highest_time = even_time[0];
+    uint16_t highest_count = even_count[0];
     for (int i = 1; i < 4; i++) {
-        if (even_time[i] > highest_time) {
-            highest_time = even_time[i];
+        if (even_count[i] > highest_count) {
+            highest_count = even_count[i];
             highest_index = i;
         }
     }
     return (1 << (3 - highest_index));
 }
 
-void handle_IR_interrupt(uint gpio, uint32_t events) {
-    static bool last_edge_was_rising = false;
-    static uint32_t last_edge_time = 0;
-    uint32_t current_time = time_us_32();
-    static uint8_t odd_bit_index = 0;
-    static uint8_t even_bit_index = 0;
-    static uint32_t odd_time[5] = {0,0,0,0,0};
-    static uint32_t even_time[4] = {0,0,0,0};
+char determine_char(char decoded_value) {
+    static char barcode[3] = {'\0'};
+    static int barcode_index = 0;
+}
 
-    // Debounce
-    if (current_time - last_edge_time < DEBOUNCE_TIME_MS * CONVERT_TO_MILLISECONDS) {
-        return;
-    }
-
+void read_barcode(void* pvParameters) {
     // If rising edge, take time interval between rising and falling edge, then store the bit that will be << based on odd_bit_index
-    if (events & GPIO_IRQ_EDGE_RISE && (odd_bit_index == 0)) {
-        last_edge_time = time_us_32();
-        last_edge_was_rising = true;
-    }
-    else if (events & GPIO_IRQ_EDGE_RISE && !last_edge_was_rising) {
-        uint32_t time_interval = current_time - last_edge_time;
-        even_time[even_bit_index] = time_interval;
-        even_bit_index++;
-        printf("Even Bit: %d\n", even_bit_index);
-        printf("Even Array: %d, %d, %d, %d\n", even_time[0], even_time[1], even_time[2], even_time[3]);
-        last_edge_was_rising = true;
-    }
-    else if (events & GPIO_IRQ_EDGE_FALL && last_edge_was_rising) {
-        uint32_t time_interval = current_time - last_edge_time;
-        odd_time[odd_bit_index] = time_interval;
-        odd_bit_index++;
-        printf("Odd Bit: %d\n", odd_bit_index);
-        printf("Odd Array: %d, %d, %d, %d, %d\n", odd_time[0], odd_time[1], odd_time[2], odd_time[3], odd_time[4]);
-        last_edge_was_rising = false;
-    }
+    bool start_count = false;
+    bool last_color_black = true;
+    uint8_t odd_bit_index = 0;
+    uint8_t even_bit_index = 0;
+    uint16_t black_count = 0;
+    uint16_t white_count = 0;
+    uint16_t odd_count[5] = {0,0,0,0,0};
+    uint16_t even_count[4] = {0,0,0,0};
+    uint32_t adc_value = 0;
+    while(true) {
+        adc_value = adc_read();
+        if (odd_bit_index == 0 && even_bit_index == 0 && adc_value > COLOR_THRESHOLD) {
+            start_count = true;
+        }
 
-    // If we have 9 bits, reset everything and decode the value
-    if ((odd_bit_index + even_bit_index) >= 9) {
-        uint8_t odd_bit = determine_odd_bit(odd_time);
-        uint8_t even_bit = determine_even_bit(even_time);
-        char decoded_value = code_39_decoder(odd_bit, even_bit);
-        odd_bit_index = even_bit_index = 0;
-        last_edge_was_rising = false;
-        printf("Decoded Value: %c\n", decoded_value);
+        if (start_count) {
+            if (adc_value >= COLOR_THRESHOLD) {
+                black_count++;
+            } else if (adc_value < COLOR_THRESHOLD) {
+                white_count++;
+            }
+
+            if(adc_value >= COLOR_THRESHOLD && !last_color_black) {
+                even_count[even_bit_index] = white_count;
+                printf("white_count: %d\n", white_count);
+                even_bit_index++;
+                black_count = 0;
+                last_color_black = true;
+            } else if (adc_value < COLOR_THRESHOLD && last_color_black) {
+                odd_count[odd_bit_index] = black_count;
+                printf("black_count: %d\n", black_count);
+                odd_bit_index++;
+                white_count = 0;
+                last_color_black = false;
+            }
+        }
+
+        // If we have 9 bits, reset everything and decode the value
+        if ((odd_bit_index + even_bit_index) >= 9) {
+            uint8_t odd_bit = determine_odd_bit(odd_count);
+            uint8_t even_bit = determine_even_bit(even_count);
+            char decoded_value = code_39_decoder(odd_bit, even_bit);
+            odd_bit_index = even_bit_index = 0;
+            black_count = white_count = 0;
+            start_count = false;
+            last_color_black = true;
+            determine_char(decoded_value);
+        }
+        vTaskDelay(pdMS_TO_TICKS(1));
     }
-    last_edge_time = current_time;
 }
 
 int main() {
     stdio_init_all();
     init_IR_barcode();
-    gpio_set_irq_enabled_with_callback(26, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &handle_IR_interrupt);
 
+    TaskHandle_t barcode_task;
+    xTaskCreate(read_barcode, "temp thread", configMINIMAL_STACK_SIZE, NULL, BARCODE_TASK_PRIORITY, &barcode_task);
+    vTaskStartScheduler();
     while(1);
     return 0;
 }

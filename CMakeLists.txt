@@ -48,5 +48,8 @@ endif()
 
 # Add executable. Default name is the project name
 add_subdirectory(driver)
-# add_subdirectory(src)
+add_subdirectory(src)
+add_subdirectory(partial_integration)
 include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/partial_integration_include)
+# add_subdirectory(src)
