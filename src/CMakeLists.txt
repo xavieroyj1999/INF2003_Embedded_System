@@ -12,4 +12,6 @@ target_link_libraries(main
 # Create map/bin/hex file etc.
 pico_add_extra_outputs(main)
 
+pico_enable_stdio_usb(main 1)
+
 target_include_directories(main PUBLIC ${PROJECT_SOURCE_DIR}/include)

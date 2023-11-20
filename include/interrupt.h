@@ -1,4 +1,5 @@
 void interrupt_callback(uint gpio, uint32_t events) {
+    // Right Encoder Distance Counter
     uint32_t current_time = time_us_32();
     if (events & GPIO_IRQ_EDGE_RISE && gpio == RENCODER_PIN) {
         static uint32_t rencoder_last_time = 0;
@@ -8,6 +9,8 @@ void interrupt_callback(uint gpio, uint32_t events) {
             g_right_encoder_interrupts++;
         }
     }
+
+    // Left Encoder Distance Counter
     if (events & GPIO_IRQ_EDGE_RISE && gpio == LENCODER_PIN) {
         static uint32_t lencoder_last_time = 0;
         if (current_time - lencoder_last_time > DEBOUNCE_TIME) {
@@ -16,20 +19,36 @@ void interrupt_callback(uint gpio, uint32_t events) {
             g_left_encoder_interrupts++;
         }
     }
+
+    // Left Infrared Sensor to readjust degree upon hitting a wall
     if (events & GPIO_IRQ_EDGE_RISE && gpio == LINFRARED_PIN) {
         static uint32_t linfrared_last_time = 0;
         if (current_time - linfrared_last_time > DEBOUNCE_TIME) {
             linfrared_last_time = current_time;
         }
-        control_wheels(EAST);
+        while(gpio_get(LINFRARED_PIN) == HIGH) {
+            right_wheel_backward();
+        }
+        g_inital_degree = magneto_read();
+        generateDegreeThresholds();
+        right_wheel_stop();
     }
+
+    // Right Infrared Sensor to readjust degree upon hitting a wall
     if (events & GPIO_IRQ_EDGE_RISE && gpio == RINFRARED_PIN) {
         static uint32_t rinfrared_last_time = 0;
         if (current_time - rinfrared_last_time > DEBOUNCE_TIME) {
             rinfrared_last_time = current_time;
         }
-        control_wheels(WEST);
+        while(gpio_get(RINFRARED_PIN) == HIGH) {
+            left_wheel_backward();
+        }
+        g_inital_degree = magneto_read();
+        generateDegreeThresholds();
+        left_wheel_stop();
     }
+
+    // Barcode Infrared Sensor to start reading barcode
     if (gpio == BINFRARED_PIN) {
         static bool last_edge_was_rising = false;
         static uint32_t last_edge_time = 0;
@@ -70,5 +89,24 @@ void interrupt_callback(uint gpio, uint32_t events) {
             printf("Decoded Value: %c\n", decoded_value);
         }
         last_edge_time = current_time;
+    }
+
+    if (gpio == ECHO_PIN) {
+        static uint64_t start_time = 0;
+        uint64_t time_elapsed = 0;
+        double distance = 0;
+        if (events == GPIO_IRQ_EDGE_FALL)
+        {
+            time_elapsed = time_us_64() - start_time;
+            distance = calculate_distance(time_elapsed);
+            if (distance < 5)
+            {
+                printf("Too close!\n");
+            }
+        }
+        else if (events == GPIO_IRQ_EDGE_RISE)
+        {
+            start_time = time_us_64();
+        }
     }
 }

@@ -5,6 +5,7 @@
 #include "hardware/pwm.h"
 #include "hardware/gpio.h"
 #include "FreeRTOS.h"
+#include "message_buffer.h"
 #include "task.h"
 #include "math.h"
 
@@ -12,11 +13,12 @@
 #include <global_variables.h>
 #include <function_proto.h>
 #include <initialize.h>
-#include <motor_control.h>
+#include <ultrasonic.h>
 #include <barcode.h>
 #include <interrupt.h>
 #include <magnometer.h>
 #include <init_task.h>
+#include <motor_control.h>
 
 int main()
 {

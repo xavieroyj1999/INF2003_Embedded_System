@@ -25,6 +25,7 @@ void generateDegreeThresholds() {
 }
 
 float findNearestDegreeDifference(float my_degree) {
+    printf("My degree: %f\n", my_degree);
     float current_lowest_difference = 360;
     float my_degree_inverse = my_degree - 360;
     bool is_negative_difference = false;

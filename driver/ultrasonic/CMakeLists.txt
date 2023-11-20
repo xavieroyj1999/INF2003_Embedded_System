@@ -1,13 +1,18 @@
 add_executable(ultrasonic
         ultrasonic.c
-        )
+)
 
-# pull in common dependencies
+target_include_directories(ultrasonic PRIVATE
+        ${CMAKE_CURRENT_LIST_DIR}
+)
+
 target_link_libraries(ultrasonic pico_stdlib
         pico_stdio
         hardware_pwm
+        FreeRTOS-Kernel-Heap4
 )
+pico_add_extra_outputs(ultrasonic)
+
 pico_enable_stdio_usb(ultrasonic 1)
 
-# create map/bin/hex file etc.
-pico_add_extra_outputs(ultrasonic)
+target_include_directories(ultrasonic PUBLIC ${PROJECT_SOURCE_DIR}/include)
