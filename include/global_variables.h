@@ -5,6 +5,8 @@ uint8_t g_left_encoder_interrupts = 0;
 uint8_t g_right_encoder_interrupts = 0;
 uint32_t g_distance_travelled = 0;
 
+char g_barcode_result = 'a';
+
 float g_initial_degree = 0;
 float g_degree = 0;
 

@@ -1,6 +1,7 @@
 #include "lwip/apps/httpd.h"
 #include "pico/cyw43_arch.h"
 
+
 // CGI handler which is run when a request for /led.cgi is detected
 const char * cgi_led_handler(int iIndex, int iNumParams, char *pcParam[], char *pcValue[])
 {
@@ -24,9 +25,9 @@ const char * cgi_start_handler(int iIndex, int iNumParams, char *pcParam[], char
     if (strcmp(pcParam[0] , "start") == 0){
         // Look at the argument to check if LED is to be turned on (x=1) or off (x=0)
         if(strcmp(pcValue[0], "0") == 0)
-            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
+            printf("stop");
         else if(strcmp(pcValue[0], "1") == 0)
-            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
+            printf("start");
     }
     
     // Send the index page back to the user
@@ -48,5 +49,5 @@ static const tCGI cgi_handlers[] = {
 
 void cgi_init(void)
 {
-    http_set_cgi_handlers(cgi_handlers, 1);
+    http_set_cgi_handlers(cgi_handlers, 2);
 }

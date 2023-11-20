@@ -8,7 +8,7 @@
 // extern uint32_t distance_travelled;
 
 // SSI tags - tag length limited to 8 bytes by default
-const char * ssi_tags[] = {"volt", "temp", "distance"};
+const char * ssi_tags[] = {"volt", "temp", "distance", "barcode"};
 
 u16_t ssi_handler(int iIndex, char *pcInsert, int iInsertLen) {
   size_t printed;
@@ -32,6 +32,12 @@ u16_t ssi_handler(int iIndex, char *pcInsert, int iInsertLen) {
     {
       printed = snprintf(pcInsert, iInsertLen, "%d", g_distance_travelled);
       printf(" Distance: %d \n", g_distance_travelled);
+    }
+    break;
+  case 3: // barcode
+    {
+      printed = snprintf(pcInsert, iInsertLen, "%c", g_barcode_result);
+      printf(" Barcode: %c \n", g_barcode_result);
     }
     break;
   default:
