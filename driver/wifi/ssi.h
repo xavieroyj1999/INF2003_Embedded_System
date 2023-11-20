@@ -8,7 +8,7 @@
 // extern uint32_t distance_travelled;
 
 // SSI tags - tag length limited to 8 bytes by default
-const char * ssi_tags[] = {"volt", "temp", "led", "distance"};
+const char * ssi_tags[] = {"volt", "temp", "distance"};
 
 u16_t ssi_handler(int iIndex, char *pcInsert, int iInsertLen) {
   size_t printed;
@@ -28,19 +28,7 @@ u16_t ssi_handler(int iIndex, char *pcInsert, int iInsertLen) {
     printf(" Temp: %f \n", tempC);
     }
     break;
-  case 2: // led
-    {
-      bool led_status = cyw43_arch_gpio_get(CYW43_WL_GPIO_LED_PIN);
-      if(led_status == true){
-        printed = snprintf(pcInsert, iInsertLen, "ON");
-        printf("LED is on \n"); 
-      }
-      else{
-        printed = snprintf(pcInsert, iInsertLen, "OFF");
-        printf("LED is off \n");
-      }
-    }
-  case 3: // distance
+  case 2: // distance
     {
       printed = snprintf(pcInsert, iInsertLen, "%d", g_distance_travelled);
       printf(" Distance: %d \n", g_distance_travelled);

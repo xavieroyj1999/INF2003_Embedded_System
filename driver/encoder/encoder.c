@@ -77,7 +77,7 @@ void performance_track_task(void* pvParameters) {
         g_distance_travelled = distance_travelled;
 
         // Update the distance in the SSI handler
-        ssi_handler(3, "distance", 8);
+        // ssi_handler(3, "distance", 8);
     }
 }
 
@@ -91,7 +91,7 @@ void start_tasks() {
 int main() {
     stdio_init_all();
     init_encoder();
-    ssi_handler(3, "distance", 8);
+    // ssi_handler(3, "distance", 8);
     // ssi_init();
 
     gpio_set_irq_enabled_with_callback(LEFT_ENCODER_PIN, GPIO_IRQ_EDGE_RISE, true, &left_encoder_callback);
