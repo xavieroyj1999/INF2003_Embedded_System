@@ -9,6 +9,12 @@
 #include "task.h"
 #include "math.h"
 #include "semphr.h"
+#include "pico/cyw43_arch.h"
+#include "lwip/apps/httpd.h"
+#include "lwipopts.h"
+
+#include <ssi.h>
+#include <cgi.h>
 
 #include <FreeRTOSConfig.h>
 #include <declarations.h>
@@ -17,6 +23,40 @@
 #include <barcode.h>
 #include <initialize.h>
 #include <magnometer.h>
+
+
+#define WEB_TASK_PRIORITY				( tskIDLE_PRIORITY + 1UL )
+#define WEB_TASK_STACK_SIZE			(( configSTACK_DEPTH_TYPE ) 2048)
+
+void webserver_task(__unused void *params) {
+    cyw43_arch_init();
+
+    cyw43_arch_enable_sta_mode();
+
+    // Connect to the WiFI network - loop until connected
+    while(cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 30000) != 0){
+        printf("Attempting to connect...\n");
+    }
+    // Print a success message once connected
+    printf("Connected! \n");
+    
+    // Initialise web server
+    httpd_init();
+    printf("Http server initialised\n");
+
+    // Configure SSI and CGI handler
+    ssi_init(); 
+    printf("SSI Handler initialised\n");
+    cgi_init();
+    printf("CGI Handler initialised\n");
+    
+    // Infinite loop
+    while(true){
+        vTaskDelay(1000);
+    };
+}
+
+
 
 void interrupt_callback(uint gpio, uint32_t events) {
     // Right Encoder Distance Counter
@@ -488,6 +528,9 @@ void start_tasks() {
     main_task_semaphore = xSemaphoreCreateBinary();
     TaskHandle_t task_main;
     xTaskCreate(main_task, "main thread", configMINIMAL_STACK_SIZE, NULL, MAIN_TASK, &task_main);
+
+    TaskHandle_t task_webserver;
+    xTaskCreate(webserver_task, "web server thread", configMINIMAL_STACK_SIZE, NULL, WEB_TASK_PRIORITY, &task_webserver);
 
     send_choose_duty_cycle_buffer = xMessageBufferCreate(mbaTASK_MESSAGE_BUFFER_SIZE);
     receive_choose_duty_cycle_buffer = xMessageBufferCreate(mbaTASK_MESSAGE_BUFFER_SIZE);

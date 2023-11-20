@@ -12,7 +12,7 @@ output = open('htmldata.c', 'w')
 
 #Traverse directory, generate list of files
 files = list()
-os.chdir('../driver/wifi/html_files')
+os.chdir('../partial_integration/html_files')
 for(dirpath, dirnames, filenames) in os.walk('.'):
     files += [os.path.join(dirpath, file) for file in filenames]
 

@@ -1,8 +1,0 @@
-add_subdirectory(ultrasonic)
-add_subdirectory(magnetometer)
-add_subdirectory(irline)
-add_subdirectory(motor)
-add_subdirectory(encoder)
-add_subdirectory(barcode)
-add_subdirectory(ideal_mapping)
-add_subdirectory(wifi)
