@@ -1,3 +1,5 @@
+static SemaphoreHandle_t barcode_task_complete;
+
 // Barcode 39 wiki for table, off_bit = black_bar, even_bit = white_bar
 char code_39_decoder(int odd_bit, int even_bit)
 {
@@ -144,6 +146,7 @@ void determine_char(char decoded_value)
         g_flipped_barcode = false;
         g_barcode_index = 0;
         g_decoded_value = barcode[1];
+        xSemaphoreGive(barcode_task_complete);
         return;
     }
 

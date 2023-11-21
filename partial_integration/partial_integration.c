@@ -41,7 +41,6 @@ static SemaphoreHandle_t left_wheel_task_complete;
 static SemaphoreHandle_t right_wheel_task_complete;
 static SemaphoreHandle_t barcode_task_sempahore;
 static SemaphoreHandle_t main_task_semaphore;
-static SemaphoreHandle_t barcode_task_complete;
 static SemaphoreHandle_t magnetometer_task;
 static SemaphoreHandle_t straight_path_task_semaphore;
 static SemaphoreHandle_t object_semaphore;
@@ -110,14 +109,12 @@ void interrupt_callback(uint gpio, uint32_t events)
         if (current_time - linfrared_last_time > DEBOUNCE_TIME)
         {
             linfrared_last_time = current_time;
-            gpio_set_irq_enabled_with_callback(RENCODER_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
-            while (gpio_get(LINFRARED_PIN) == HIGH)
-            {
-                right_wheel_backward();
-            }
+            gpio_set_irq_enabled_with_callback(RENCODER_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);\
+            right_wheel_backward();
+            while (gpio_get(LINFRARED_PIN) == HIGH);
             g_initial_degree = magneto_read();
             generateDegreeThresholds();
-            right_wheel_stop();
+            right_wheel_forward();
             gpio_set_irq_enabled_with_callback(RENCODER_PIN, GPIO_IRQ_EDGE_RISE, true, &interrupt_callback);
         }
     }
@@ -130,17 +127,16 @@ void interrupt_callback(uint gpio, uint32_t events)
         {
             rinfrared_last_time = current_time;
             gpio_set_irq_enabled_with_callback(LENCODER_PIN, GPIO_IRQ_EDGE_RISE, true, &interrupt_callback);
-            while (gpio_get(RINFRARED_PIN) == HIGH)
-            {
-                left_wheel_backward();
-            }
+            left_wheel_backward();
+            while (gpio_get(RINFRARED_PIN) == HIGH);
             g_initial_degree = magneto_read();
             generateDegreeThresholds();
-            left_wheel_stop();
+            left_wheel_forward();
             gpio_set_irq_enabled_with_callback(LENCODER_PIN, GPIO_IRQ_EDGE_RISE, true, &interrupt_callback);
         }
     }
 
+    // Scanned front wall
     if (events & GPIO_IRQ_EDGE_RISE && gpio == BINFRARED_D0_PIN)
     {
         static uint32_t bdinfrared_last_time = 0;
@@ -148,14 +144,10 @@ void interrupt_callback(uint gpio, uint32_t events)
         {
             bdinfrared_last_time = current_time;
             g_wall_detected = true;
-            left_wheel_stop();
-            right_wheel_stop();
             gpio_set_irq_enabled_with_callback(BINFRARED_D0_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
-            while (gpio_get(BINFRARED_D0_PIN) == HIGH)
-            {
-                left_wheel_backward();
-                right_wheel_backward();
-            }
+            left_wheel_backward();
+            right_wheel_backward();
+            while (gpio_get(BINFRARED_D0_PIN) == HIGH);
             left_wheel_stop();
             right_wheel_stop();
             xSemaphoreGive(wall_semaphore);
@@ -268,7 +260,7 @@ void sync_wheel_task(void *pvParameters)
             receive_sync_duty_cycle_buffer,
             (void *)&duty_cycle_ratio,
             sizeof(duty_cycle_ratio),
-            portMAX_DELAY);
+            0);
     }
 }
 
@@ -314,7 +306,7 @@ void choose_duty_cycle_task(void *pvParameters)
             break;
         }
 
-        xMessageBufferSend(receive_choose_duty_cycle_buffer, &duty_cycle, sizeof(duty_cycle), portMAX_DELAY);
+        xMessageBufferSend(receive_choose_duty_cycle_buffer, &duty_cycle, sizeof(duty_cycle), 0);
     }
 }
 
@@ -328,12 +320,14 @@ void straight_path_task(void *pvParameters)
         xSemaphoreTake(straight_path_task_semaphore, portMAX_DELAY);
         current_left_wheel_count = g_left_encoder_interrupts;
         current_right_wheel_count = g_right_encoder_interrupts;
-        while (count <= 200)
+        left_wheel_forward();
+        right_wheel_forward();
+        while (count <= 100)
         {
-            if (!g_object_detected && !g_wall_detected)
-            {
-                left_wheel_forward();
-                right_wheel_forward();
+            if (g_object_detected || g_wall_detected) {
+                left_wheel_stop();
+                right_wheel_stop();
+                break;
             }
             vTaskDelay(pdMS_TO_TICKS(50));
             count++;
@@ -609,7 +603,7 @@ void main_task()
                 send_sync_duty_cycle_buffer,
                 (void *)&duty_cycle_ratio,
                 sizeof(duty_cycle_ratio),
-                portMAX_DELAY);
+                0);
             xMessageBufferReceive(
                 receive_sync_duty_cycle_buffer,
                 (void *)&duty_cycle_ratio,
@@ -624,42 +618,46 @@ void main_task()
         case '4': // Move Straight, Turn Right, Continue Move Straight
             gpio_set_irq_enabled_with_callback(BINFRARED_D0_PIN, GPIO_IRQ_EDGE_RISE, true, &interrupt_callback);
             xSemaphoreGive(straight_path_task_semaphore);
-            if (xSemaphoreTake(wall_semaphore, pdMS_TO_TICKS(10000)) == pdPASS)
+            if (xSemaphoreTake(wall_semaphore, pdMS_TO_TICKS(5000)) == pdPASS)
             {
                 direction = EAST;
                 xMessageBufferSend(
                     g_leftWheelBuffer,
                     (void *)&direction,
                     sizeof(direction),
-                    portMAX_DELAY);
+                    0);
                 xMessageBufferSend(
                     g_rightWheelBuffer,
                     (void *)&direction,
                     sizeof(direction),
-                    portMAX_DELAY);
+                    0);
                 g_wall_detected = false;
             }
+            xSemaphoreTake(main_task_semaphore, portMAX_DELAY);
+            xSemaphoreGive(straight_path_task_semaphore);
             xSemaphoreTake(main_task_semaphore, portMAX_DELAY);
             gpio_set_irq_enabled_with_callback(BINFRARED_D0_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
             break;
         case '5': // Move Straight, Turn Left, Continue Move Straight
             gpio_set_irq_enabled_with_callback(BINFRARED_D0_PIN, GPIO_IRQ_EDGE_RISE, true, &interrupt_callback);
             xSemaphoreGive(straight_path_task_semaphore);
-            if (xSemaphoreTake(wall_semaphore, pdMS_TO_TICKS(10000)) == pdPASS)
+            if (xSemaphoreTake(wall_semaphore, pdMS_TO_TICKS(5000)) == pdPASS)
             {
                 direction = WEST;
                 xMessageBufferSend(
                     g_leftWheelBuffer,
                     (void *)&direction,
                     sizeof(direction),
-                    portMAX_DELAY);
+                    0);
                 xMessageBufferSend(
                     g_rightWheelBuffer,
                     (void *)&direction,
                     sizeof(direction),
-                    portMAX_DELAY);
+                    0);
                 g_wall_detected = false;
             }
+            xSemaphoreTake(main_task_semaphore, portMAX_DELAY);
+            xSemaphoreGive(straight_path_task_semaphore);
             xSemaphoreTake(main_task_semaphore, portMAX_DELAY);
             gpio_set_irq_enabled_with_callback(BINFRARED_D0_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
             break;
@@ -676,7 +674,7 @@ void main_task()
         case '7': // Ultrasonic
             gpio_set_irq_enabled_with_callback(ECHO_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &interrupt_callback);
             xSemaphoreGive(straight_path_task_semaphore);
-            if (xSemaphoreTake(object_semaphore, pdMS_TO_TICKS(10000)) == pdPASS)
+            if (xSemaphoreTake(object_semaphore, pdMS_TO_TICKS(5000)) == pdPASS)
             {
                 gpio_set_irq_enabled_with_callback(ECHO_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, false, &interrupt_callback);
                 direction = SOUTH;
@@ -684,14 +682,16 @@ void main_task()
                     g_leftWheelBuffer,
                     (void *)&direction,
                     sizeof(direction),
-                    portMAX_DELAY);
+                    0);
                 xMessageBufferSend(
                     g_rightWheelBuffer,
                     (void *)&direction,
                     sizeof(direction),
-                    portMAX_DELAY);
+                    0);
                 g_object_detected = false;
             }
+            xSemaphoreTake(main_task_semaphore, portMAX_DELAY);
+            xSemaphoreGive(straight_path_task_semaphore);
             xSemaphoreTake(main_task_semaphore, portMAX_DELAY);
             gpio_set_irq_enabled_with_callback(ECHO_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, false, &interrupt_callback);
         default:
