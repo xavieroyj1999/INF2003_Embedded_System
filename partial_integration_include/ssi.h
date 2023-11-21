@@ -29,8 +29,8 @@ u16_t ssi_handler(int iIndex, char *pcInsert, int iInsertLen)
     default:
         printed = 0;
         break;
-        return (u16_t)printed;
     }
+    return (u16_t)printed;
 }
 
 // Initialise the SSI handler

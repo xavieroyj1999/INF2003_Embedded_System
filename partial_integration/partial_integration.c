@@ -109,9 +109,10 @@ void interrupt_callback(uint gpio, uint32_t events)
         if (current_time - linfrared_last_time > DEBOUNCE_TIME)
         {
             linfrared_last_time = current_time;
-            gpio_set_irq_enabled_with_callback(RENCODER_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);\
+            gpio_set_irq_enabled_with_callback(RENCODER_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
             right_wheel_backward();
-            while (gpio_get(LINFRARED_PIN) == HIGH);
+            while (gpio_get(LINFRARED_PIN) == HIGH)
+                ;
             g_initial_degree = magneto_read();
             generateDegreeThresholds();
             right_wheel_forward();
@@ -128,7 +129,8 @@ void interrupt_callback(uint gpio, uint32_t events)
             rinfrared_last_time = current_time;
             gpio_set_irq_enabled_with_callback(LENCODER_PIN, GPIO_IRQ_EDGE_RISE, true, &interrupt_callback);
             left_wheel_backward();
-            while (gpio_get(RINFRARED_PIN) == HIGH);
+            while (gpio_get(RINFRARED_PIN) == HIGH)
+                ;
             g_initial_degree = magneto_read();
             generateDegreeThresholds();
             left_wheel_forward();
@@ -147,7 +149,8 @@ void interrupt_callback(uint gpio, uint32_t events)
             gpio_set_irq_enabled_with_callback(BINFRARED_D0_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
             left_wheel_backward();
             right_wheel_backward();
-            while (gpio_get(BINFRARED_D0_PIN) == HIGH);
+            while (gpio_get(BINFRARED_D0_PIN) == HIGH)
+                ;
             left_wheel_stop();
             right_wheel_stop();
             xSemaphoreGive(wall_semaphore);
@@ -324,7 +327,8 @@ void straight_path_task(void *pvParameters)
         right_wheel_forward();
         while (count <= 100)
         {
-            if (g_object_detected || g_wall_detected) {
+            if (g_object_detected || g_wall_detected)
+            {
                 left_wheel_stop();
                 right_wheel_stop();
                 break;
