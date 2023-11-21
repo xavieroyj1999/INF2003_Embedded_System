@@ -1,5 +1,6 @@
 #include "lwip/apps/httpd.h"
 #include "pico/cyw43_arch.h"
+#include "global_variables.h"
 
 // CGI handler which is run when a request for /led.cgi is detected
 const char *cgi_led_handler(int iIndex, int iNumParams, char *pcParam[], char *pcValue[])
@@ -20,6 +21,7 @@ const char *cgi_led_handler(int iIndex, int iNumParams, char *pcParam[], char *p
 // CGI handler to start or stop the car
 const char *cgi_start_handler(int iIndex, int iNumParams, char *pcParam[], char *pcValue[])
 {
+    // ONLOAD CHECK IF HTML IS STARTED
     // Check if an request for LED has been made (/led.cgi?led=x)
     // if (strcmp(pcParam[0], "start") == 0)
     // {
@@ -30,11 +32,13 @@ const char *cgi_start_handler(int iIndex, int iNumParams, char *pcParam[], char 
     //         printf("start");
     // }
     // Send the index page back to the user
+    printf("Loading SHTML\n");
     return "/index.shtml";
 }
 
 // tCGI Struct
 // Fill this with all of the CGI requests and their respective handlers
+// This is to prepare for function calls
 static const tCGI cgi_handlers[] = {
     {// Html request for "/led.cgi" triggers cgi_handler
      "/led.cgi", cgi_led_handler},
