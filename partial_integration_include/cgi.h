@@ -2,19 +2,24 @@
 #include "pico/cyw43_arch.h"
 #include "global_variables.h"
 
-// CGI handler which is run when a request for /led.cgi is detected
-const char *cgi_led_handler(int iIndex, int iNumParams, char *pcParam[], char *pcValue[])
+const char *cgi_synchronise_wheels_handler(int iIndex, int iNumParams, char *pcParam[], char *pcValue[])
 {
-    // Check if an request for LED has been made (/led.cgi?led=x)
-    // if (strcmp(pcParam[0] , "led") == 0){
-    //     // Look at the argument to check if LED is to be turned on (x=1) or off (x=0)
-    //     if(strcmp(pcValue[0], "0") == 0)
-    //         cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
-    //     else if(strcmp(pcValue[0], "1") == 0)
-    //         cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
-    // }
+    // I don't need to care about the params
+    // gpio_set_irq_enabled_with_callback(LINFRARED_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
+    // gpio_set_irq_enabled_with_callback(RINFRARED_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
+    printf("Synchronising wheels\n");
+    xMessageBufferSend(
+        send_sync_duty_cycle_buffer,
+        (void *)&duty_cycle_ratio,
+        sizeof(duty_cycle_ratio),
+        portMAX_DELAY);
+    xMessageBufferReceive(
+        receive_sync_duty_cycle_buffer,
+        (void *)&duty_cycle_ratio,
+        sizeof(duty_cycle_ratio),
+        portMAX_DELAY);
 
-    // Send the index page back to the user
+    // Return HTML back to the server
     return "/index.shtml";
 }
 
@@ -40,10 +45,18 @@ const char *cgi_start_handler(int iIndex, int iNumParams, char *pcParam[], char 
 // Fill this with all of the CGI requests and their respective handlers
 // This is to prepare for function calls
 static const tCGI cgi_handlers[] = {
-    {// Html request for "/led.cgi" triggers cgi_handler
-     "/led.cgi", cgi_led_handler},
-    {// Add your new route here
-     "/start.cgi", cgi_start_handler}};
+    // {// Html request for "/led.cgi" triggers cgi_handler
+    //  "/led.cgi", cgi_led_handler},
+    {
+        // Add your new route here
+        "/start.cgi",
+        cgi_start_handler,
+    },
+    {
+        "/synchronise-wheels.cgi",
+        cgi_synchronise_wheels_handler,
+    },
+};
 
 void cgi_init(void)
 {
