@@ -673,6 +673,10 @@ void main_task()
             break;
         case '7': // Ultrasonic
             gpio_set_irq_enabled_with_callback(ECHO_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &interrupt_callback);
+            gpio_set_irq_enabled_with_callback(LINFRARED_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
+            gpio_set_irq_enabled_with_callback(RINFRARED_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
+            gpio_set_irq_enabled_with_callback(LENCODER_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
+            gpio_set_irq_enabled_with_callback(RENCODER_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
             xSemaphoreGive(straight_path_task_semaphore);
             if (xSemaphoreTake(object_semaphore, pdMS_TO_TICKS(5000)) == pdPASS)
             {
@@ -714,8 +718,8 @@ void start_tasks()
     xTaskCreate(main_task, "main thread", configMINIMAL_STACK_SIZE, NULL, MAIN_TASK, &task_main);
 
     // Start the webserver task
-    TaskHandle_t task_webserver;
-    xTaskCreate(webserver_task, "web server thread", configMINIMAL_STACK_SIZE, NULL, WEB_TASK_PRIORITY, &task_webserver);
+    // TaskHandle_t task_webserver;
+    // xTaskCreate(webserver_task, "web server thread", configMINIMAL_STACK_SIZE, NULL, WEB_TASK_PRIORITY, &task_webserver);
 
     send_choose_duty_cycle_buffer = xMessageBufferCreate(mbaTASK_MESSAGE_BUFFER_SIZE);
     receive_choose_duty_cycle_buffer = xMessageBufferCreate(mbaTASK_MESSAGE_BUFFER_SIZE);
