@@ -4,6 +4,8 @@ uint16_t g_current_right_wheel_count = 0;
 uint16_t g_left_encoder_interrupts = 0;
 uint16_t g_right_encoder_interrupts = 0;
 
+uint32_t g_distance_travelled = 0;
+
 bool g_object_detected = false;
 bool g_wall_detected = false;
 

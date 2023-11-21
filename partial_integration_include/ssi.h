@@ -2,7 +2,6 @@
 #include "pico/cyw43_arch.h"
 #include "hardware/adc.h"
 #include "stdint.h" // Include the header for uint32_t
-#include "global_variables.h"
 
 // Declare distance_travelled (extern indicates that it's declared elsewhere)
 // extern uint32_t distance_travelled;
@@ -12,7 +11,7 @@ const char *ssi_tags[] = {"volt", "temp", "distance", "barcode"};
 
 u16_t ssi_handler(int iIndex, char *pcInsert, int iInsertLen)
 {
-    switch_t printed;
+    size_t printed;
     switch (iIndex)
     {
     case 3:

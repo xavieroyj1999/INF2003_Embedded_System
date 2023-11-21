@@ -1,6 +1,5 @@
 #include "lwip/apps/httpd.h"
 #include "pico/cyw43_arch.h"
-#include "global_variables.h"
 
 // CGI handler which is run when a request for /led.cgi is detected
 const char *cgi_led_handler(int iIndex, int iNumParams, char *pcParam[], char *pcValue[])
@@ -47,5 +46,6 @@ static const tCGI cgi_handlers[] = {
 
 void cgi_init(void)
 {
+    printf("DOES CGI WORKS\n");
     http_set_cgi_handlers(cgi_handlers, 2);
 }
