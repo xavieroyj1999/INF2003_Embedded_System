@@ -1,4 +1,5 @@
-void high_pin_init() {
+void high_pin_init()
+{
     gpio_init(ULTRASONIC_3V3_PIN);
     gpio_set_dir(ULTRASONIC_3V3_PIN, GPIO_OUT);
     gpio_put(ULTRASONIC_3V3_PIN, HIGH);
@@ -24,7 +25,8 @@ void high_pin_init() {
     gpio_put(BINFRARED_3V3_PIN, HIGH);
 }
 
-void motor_control_init() {
+void motor_control_init()
+{
     // Motor A
     gpio_set_function(ENA_PIN, GPIO_FUNC_PWM);
     pwm_set_clkdiv(GP5_SLICE, 100);
@@ -56,7 +58,8 @@ void motor_control_init() {
     gpio_put(INB2_PIN, LOW);
 }
 
-void encoder_init() {
+void encoder_init()
+{
     gpio_init(LENCODER_PIN);
     gpio_set_dir(LENCODER_PIN, GPIO_IN);
 
@@ -64,7 +67,8 @@ void encoder_init() {
     gpio_set_dir(RENCODER_PIN, GPIO_IN);
 }
 
-void magnetometer_init() {
+void magnetometer_init()
+{
     i2c_init(I2C_PORT, 100 * 1000);
     gpio_set_function(SDA_PIN, GPIO_FUNC_I2C);
     gpio_set_function(SCL_PIN, GPIO_FUNC_I2C);
@@ -75,7 +79,8 @@ void magnetometer_init() {
     i2c_write_blocking(I2C_PORT, MAGNETIC_SENSOR_ADDRESS, config_continuous, 2, false);
 }
 
-void infrared_init() {
+void infrared_init()
+{
     gpio_init(LINFRARED_PIN);
     gpio_set_dir(LINFRARED_PIN, GPIO_IN);
 
@@ -89,10 +94,10 @@ void infrared_init() {
     gpio_init(BINFRARED_PIN);
     gpio_set_dir(BINFRARED_PIN, GPIO_IN);
     adc_select_input(IR_ADC_CHANNEL);
-
 }
 
-void ultrasonic_init() {
+void ultrasonic_init()
+{
     gpio_init(TRIG_PIN);
     gpio_set_dir(TRIG_PIN, GPIO_OUT);
     gpio_put(TRIG_PIN, 0);

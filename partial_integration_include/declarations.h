@@ -2,7 +2,8 @@
 #define HIGH 1
 #define DEBOUNCE_TIME 50000 // 50ms
 
-enum directionEvent {
+enum directionEvent
+{
     STAY = 0x00,
     NORTH = 0x01,
     EAST = 0x02,
@@ -11,7 +12,8 @@ enum directionEvent {
 };
 
 // For Decoder
-enum white_bar{
+enum white_bar
+{
     add0 = 0b0100,
     add10 = 0b0010,
     add20 = 0b0001,
@@ -19,7 +21,8 @@ enum white_bar{
 };
 
 // For Decoder
-enum black_bar{
+enum black_bar
+{
     no1 = 0b10001,
     no2 = 0b01001,
     no3 = 0b11000,
@@ -89,4 +92,4 @@ enum black_bar{
 #define OUT_X_H_M 0x03
 
 // Buffer
-#define mbaTASK_MESSAGE_BUFFER_SIZE       ( 60 )
+#define mbaTASK_MESSAGE_BUFFER_SIZE (60)

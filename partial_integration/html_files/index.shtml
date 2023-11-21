@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+    <head> 
+        <title>PicoW Webserver</title> 
+        <!-- Latest compiled and minified CSS -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+        <!-- jQuery library -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+        <!-- fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500&display=swap" rel="stylesheet">
+
+        <!-- Latest compiled JavaScript -->
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    </head>
+    <body> 
+        <div style="margin: 20px 25px; font-family: 'Montserrat', sans-serif; line-height: 0.2">
+            <h4> ROBOT CAR CONTROLLER </h4>
+            <h4> | INF2003 </h4>
+        </div>
+        <div class="container">
+            <!-- <div class="container p-3 my-3 bg-dark text-white"> <h1>Robot Car Dashboard</h1> </div> -->
+            <br>
+            <div style="margin: auto; align-items: center; text-align: center;">
+                <a href="/start.cgi?start=1">START</a>
+                <br />
+                <img margin="auto" width="570" height="380" src="https://cdn.explara.com/dreamstimexxl9289855720170830103412.jpg">
+                <br />
+                <p style="font-family: 'Montserrat', sans-serif;">DISTANCE TRAVELLED: <!--#distance--> M</p>
+            </div>
+
+            <h2>Initiate Car:</h2>
+            <a href="/start.cgi?start=1"><button>START</button></a>
+            <a href="/start.cgi?start=0"><button>STOP</button></a>
+            <br>
+            <h2>Car Performance:</h2>
+            <a href="/start.cgi?start=1"><button>START</button></a>
+            <a href="/start.cgi?start=0"><button>STOP</button></a>
+            <br>
+            <h2>This bit is SSI:</h2>
+            <p>Voltage: <!--#volt--></p>
+            <p>Temp: <!--#temp--> C</p>
+            <p>Barcode: <!--#barcode--></p>
+            <br>
+            <h2>This bit is CGI:</h2>
+            <a href="/led.cgi?led=1"><button>LED ON</button></a>
+            <a href="/led.cgi?led=0"><button>LED OFF</button></a>
+            <br>
+            <br>
+            <a href="/index.shtml">Refresh</a>
+        </div>
+   </body>
+</html>
