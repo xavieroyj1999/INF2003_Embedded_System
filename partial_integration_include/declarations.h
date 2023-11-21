@@ -62,6 +62,7 @@ enum black_bar{
 // Infrared
 #define LINFRARED_PIN 16
 #define RINFRARED_PIN 17
+#define BINFRARED_D0_PIN 20
 #define BINFRARED_PIN 26
 
 #define LINFRARED_3V3_PIN 11
@@ -72,6 +73,7 @@ enum black_bar{
 
 #define COLOR_THRESHOLD 1500
 #define DELIMITER '*'
+#define FLIPPED_DELIMITER 'O'
 
 // Magnetometer
 #define SDA_PIN 18

@@ -36,6 +36,7 @@ static SemaphoreHandle_t main_task_semaphore;
 static SemaphoreHandle_t barcode_task_complete;
 static SemaphoreHandle_t magnetometer_task;
 static SemaphoreHandle_t straight_path_task_semaphore;
+static SemaphoreHandle_t object_semaphore;
 static SemaphoreHandle_t wall_semaphore;
 
 void interrupt_callback(uint gpio, uint32_t events) {
@@ -63,15 +64,15 @@ void interrupt_callback(uint gpio, uint32_t events) {
         static uint32_t linfrared_last_time = 0;
         if (current_time - linfrared_last_time > DEBOUNCE_TIME) {
             linfrared_last_time = current_time;
-        }
-        while(gpio_get(LINFRARED_PIN) == HIGH) {
-            right_wheel_backward();
             gpio_set_irq_enabled_with_callback(RENCODER_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
+            while(gpio_get(LINFRARED_PIN) == HIGH) {
+                right_wheel_backward();
+            }
+            g_initial_degree = magneto_read();
+            generateDegreeThresholds();
+            right_wheel_stop();
+            gpio_set_irq_enabled_with_callback(RENCODER_PIN, GPIO_IRQ_EDGE_RISE, true, &interrupt_callback);
         }
-        g_initial_degree = magneto_read();
-        generateDegreeThresholds();
-        right_wheel_stop();
-        gpio_set_irq_enabled_with_callback(RENCODER_PIN, GPIO_IRQ_EDGE_RISE, true, &interrupt_callback);
     }
 
     // Right Infrared Sensor to readjust degree upon hitting a wall
@@ -79,15 +80,33 @@ void interrupt_callback(uint gpio, uint32_t events) {
         static uint32_t rinfrared_last_time = 0;
         if (current_time - rinfrared_last_time > DEBOUNCE_TIME) {
             rinfrared_last_time = current_time;
-        }
-        while(gpio_get(RINFRARED_PIN) == HIGH) {
-            left_wheel_backward();
+            gpio_set_irq_enabled_with_callback(LENCODER_PIN, GPIO_IRQ_EDGE_RISE, true, &interrupt_callback);
+            while(gpio_get(RINFRARED_PIN) == HIGH) {
+                left_wheel_backward();
+            }
+            g_initial_degree = magneto_read();
+            generateDegreeThresholds();
+            left_wheel_stop();
             gpio_set_irq_enabled_with_callback(LENCODER_PIN, GPIO_IRQ_EDGE_RISE, true, &interrupt_callback);
         }
-        g_initial_degree = magneto_read();
-        generateDegreeThresholds();
-        left_wheel_stop();
-        gpio_set_irq_enabled_with_callback(LENCODER_PIN, GPIO_IRQ_EDGE_RISE, true, &interrupt_callback);
+    }
+
+    if (events & GPIO_IRQ_EDGE_RISE && gpio == BINFRARED_D0_PIN) {
+        static uint32_t bdinfrared_last_time = 0;
+        if (current_time - bdinfrared_last_time > DEBOUNCE_TIME) {
+            bdinfrared_last_time = current_time;
+            g_wall_detected = true;
+            left_wheel_stop();
+            right_wheel_stop();
+            gpio_set_irq_enabled_with_callback(BINFRARED_D0_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
+            while(gpio_get(BINFRARED_D0_PIN) == HIGH) {
+                left_wheel_backward();
+                right_wheel_backward();
+            }
+            left_wheel_stop();
+            right_wheel_stop();
+            xSemaphoreGive(wall_semaphore);
+        }
     }
 
     if (gpio == ECHO_PIN) {
@@ -100,8 +119,8 @@ void interrupt_callback(uint gpio, uint32_t events) {
             distance = calculate_distance(time_elapsed);
             if (distance < 5)
             {
-                xSemaphoreGive(wall_semaphore);
-                g_wall_detected = true;
+                xSemaphoreGive(object_semaphore);
+                g_object_detected = true;
             }
         }
         else if (events == GPIO_IRQ_EDGE_RISE)
@@ -238,12 +257,12 @@ void straight_path_task(void* pvParameters) {
         current_left_wheel_count = g_left_encoder_interrupts;
         current_right_wheel_count = g_right_encoder_interrupts;
         while(count <= 200) {
-            if (!g_wall_detected) {
+            if (!g_object_detected && !g_wall_detected) {
                 left_wheel_forward();
                 right_wheel_forward();
-                vTaskDelay(pdMS_TO_TICKS(50));
-                count++;
             }
+            vTaskDelay(pdMS_TO_TICKS(50));
+            count++;
         }
         count = 0;
         left_wheel_stop();
@@ -289,7 +308,6 @@ void left_wheel_task(void* pvParameters) {
                 left_wheel_stop();
             }
         left_wheel_stop();
-        vTaskDelay(100);
         xSemaphoreGive(left_wheel_task_complete);
     }
 }
@@ -329,7 +347,6 @@ void right_wheel_task(void *pvParameters) {
                 right_wheel_stop();
             }
             right_wheel_stop();
-            vTaskDelay(100);
             xSemaphoreGive(right_wheel_task_complete);
     }
 }
@@ -389,13 +406,11 @@ void barcode_task(void* pvParameters) {
                 if(adc_value >= COLOR_THRESHOLD && !last_color_black && start_count) {
                     even_count[even_bit_index] = white_count;
                     even_bit_index++;
-                    printf("Even Count: %d\n", white_count);
                     black_count = 0;
                     last_color_black = true;
                 } else if (adc_value < COLOR_THRESHOLD && last_color_black && start_count) {
                     odd_count[odd_bit_index] = black_count;
                     odd_bit_index++;
-                    printf("Odd Count: %d\n", black_count);
                     white_count = 0;
                     last_color_black = false;
                 }
@@ -486,110 +501,44 @@ void main_task() {
             xSemaphoreTake(main_task_semaphore, portMAX_DELAY);
             break;
         case '4': // Move Straight, Turn Right, Continue Move Straight
-            direction = NORTH;
-            xMessageBufferSend(
-                g_leftWheelBuffer,
-                (void *) &direction,
-                sizeof( direction ),
-                portMAX_DELAY );
-            xMessageBufferSend(
-                g_rightWheelBuffer,
-                (void *) &direction,
-                sizeof( direction ),
-                portMAX_DELAY );
-            xSemaphoreTake(left_wheel_task_complete, portMAX_DELAY);
-            xSemaphoreTake(right_wheel_task_complete, portMAX_DELAY);
-
-            xSemaphoreGive(magnetometer_task);
+            gpio_set_irq_enabled_with_callback(BINFRARED_D0_PIN, GPIO_IRQ_EDGE_RISE, true, &interrupt_callback);
+            xSemaphoreGive(straight_path_task_semaphore);
+            if (xSemaphoreTake(wall_semaphore, pdMS_TO_TICKS(10000)) == pdPASS) {
+                direction = EAST;
+                xMessageBufferSend(
+                    g_leftWheelBuffer,
+                    (void *) &direction,
+                    sizeof( direction ),
+                    portMAX_DELAY );
+                xMessageBufferSend(
+                    g_rightWheelBuffer,
+                    (void *) &direction,
+                    sizeof( direction ),
+                    portMAX_DELAY );
+                g_wall_detected = false;
+            }
             xSemaphoreTake(main_task_semaphore, portMAX_DELAY);
-
-            direction = EAST;
-            xMessageBufferSend(
-                g_leftWheelBuffer,
-                (void *) &direction,
-                sizeof( direction ),
-                portMAX_DELAY );
-            xMessageBufferSend(
-                g_rightWheelBuffer,
-                (void *) &direction,
-                sizeof( direction ),
-                portMAX_DELAY );
-            xSemaphoreTake(left_wheel_task_complete, portMAX_DELAY);
-            xSemaphoreTake(right_wheel_task_complete, portMAX_DELAY);
-            
-            xSemaphoreGive(magnetometer_task);
-            xSemaphoreTake(main_task_semaphore, portMAX_DELAY);
-
-            direction = NORTH;
-            xMessageBufferSend(
-                g_leftWheelBuffer,
-                (void *) &direction,
-                sizeof( direction ),
-                portMAX_DELAY );
-            xMessageBufferSend(
-                g_rightWheelBuffer,
-                (void *) &direction,
-                sizeof( direction ),
-                portMAX_DELAY );
-            xSemaphoreTake(left_wheel_task_complete, portMAX_DELAY);
-            xSemaphoreTake(right_wheel_task_complete, portMAX_DELAY);
-
-            xSemaphoreGive(magnetometer_task);
-            xSemaphoreTake(main_task_semaphore, portMAX_DELAY);
+            gpio_set_irq_enabled_with_callback(BINFRARED_D0_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
             break;
         case '5': // Move Straight, Turn Left, Continue Move Straight
-            direction = NORTH;
-            xMessageBufferSend(
-                g_leftWheelBuffer,
-                (void *) &direction,
-                sizeof( direction ),
-                portMAX_DELAY );
-            xMessageBufferSend(
-                g_rightWheelBuffer,
-                (void *) &direction,
-                sizeof( direction ),
-                portMAX_DELAY );
-
-            xSemaphoreTake(left_wheel_task_complete, portMAX_DELAY);
-            xSemaphoreTake(right_wheel_task_complete, portMAX_DELAY);
-
-            xSemaphoreGive(magnetometer_task);
-            xSemaphoreTake(main_task_semaphore, portMAX_DELAY);                                         
-
-            direction = WEST;
-            xMessageBufferSend(
-                g_leftWheelBuffer,
-                (void *) &direction,
-                sizeof( direction ),
-                portMAX_DELAY );
-            xMessageBufferSend(
-                g_rightWheelBuffer,
-                (void *) &direction,
-                sizeof( direction ),
-                portMAX_DELAY );
-
-            xSemaphoreTake(left_wheel_task_complete, portMAX_DELAY);
-            xSemaphoreTake(right_wheel_task_complete, portMAX_DELAY);
-
-            xSemaphoreGive(magnetometer_task);
+            gpio_set_irq_enabled_with_callback(BINFRARED_D0_PIN, GPIO_IRQ_EDGE_RISE, true, &interrupt_callback);
+            xSemaphoreGive(straight_path_task_semaphore);
+            if (xSemaphoreTake(wall_semaphore, pdMS_TO_TICKS(10000)) == pdPASS) {
+                direction = WEST;
+                xMessageBufferSend(
+                    g_leftWheelBuffer,
+                    (void *) &direction,
+                    sizeof( direction ),
+                    portMAX_DELAY );
+                xMessageBufferSend(
+                    g_rightWheelBuffer,
+                    (void *) &direction,
+                    sizeof( direction ),
+                    portMAX_DELAY );
+                g_wall_detected = false;
+            }
             xSemaphoreTake(main_task_semaphore, portMAX_DELAY);
-
-            direction = NORTH;
-            xMessageBufferSend(
-                g_leftWheelBuffer,
-                (void *) &direction,
-                sizeof( direction ),
-                portMAX_DELAY );
-            xMessageBufferSend(
-                g_rightWheelBuffer,
-                (void *) &direction,
-                sizeof( direction ),
-                portMAX_DELAY );
-            xSemaphoreTake(left_wheel_task_complete, portMAX_DELAY);
-            xSemaphoreTake(right_wheel_task_complete, portMAX_DELAY);
-
-            xSemaphoreGive(magnetometer_task);
-            xSemaphoreTake(main_task_semaphore, portMAX_DELAY);
+            gpio_set_irq_enabled_with_callback(BINFRARED_D0_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
             break;
         case '6': // Barcode
             gpio_set_irq_enabled_with_callback(LINFRARED_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
@@ -604,7 +553,7 @@ void main_task() {
         case '7': //Ultrasonic
             gpio_set_irq_enabled_with_callback(ECHO_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &interrupt_callback);
             xSemaphoreGive(straight_path_task_semaphore);
-            if (xSemaphoreTake(wall_semaphore, pdMS_TO_TICKS(10000)) == pdPASS) {
+            if (xSemaphoreTake(object_semaphore, pdMS_TO_TICKS(10000)) == pdPASS) {
             gpio_set_irq_enabled_with_callback(ECHO_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, false, &interrupt_callback);
                 direction = SOUTH;
                 xMessageBufferSend(
@@ -617,17 +566,18 @@ void main_task() {
                     (void *) &direction,
                     sizeof( direction ),
                     portMAX_DELAY );
-                g_wall_detected = false;
+                g_object_detected = false;
             }
             xSemaphoreTake(main_task_semaphore, portMAX_DELAY);
             gpio_set_irq_enabled_with_callback(ECHO_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, false, &interrupt_callback);
         default:
             break;
         }
-    gpio_set_irq_enabled_with_callback(LINFRARED_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
-    gpio_set_irq_enabled_with_callback(RINFRARED_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
-    gpio_set_irq_enabled_with_callback(LENCODER_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
-    gpio_set_irq_enabled_with_callback(RENCODER_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
+        gpio_set_irq_enabled_with_callback(LINFRARED_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
+        gpio_set_irq_enabled_with_callback(RINFRARED_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
+        gpio_set_irq_enabled_with_callback(LENCODER_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
+        gpio_set_irq_enabled_with_callback(RENCODER_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
+        gpio_set_irq_enabled_with_callback(BINFRARED_D0_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
     }
 }
 
@@ -648,6 +598,7 @@ void start_tasks() {
     TaskHandle_t task_sync_duty_cycle;
     xTaskCreate(sync_wheel_task, "sync duty cycle thread", configMINIMAL_STACK_SIZE, NULL, MAIN_TASK, &task_sync_duty_cycle);
 
+    wall_semaphore = xSemaphoreCreateBinary();
     straight_path_task_semaphore = xSemaphoreCreateBinary();
     TaskHandle_t task_straight_path;
     xTaskCreate(straight_path_task, "straight path thread", configMINIMAL_STACK_SIZE, NULL, MAIN_TASK, &task_straight_path);
@@ -664,7 +615,7 @@ void start_tasks() {
     TaskHandle_t task_right_wheel;
     xTaskCreate(right_wheel_task, "right wheel thread", configMINIMAL_STACK_SIZE, NULL, MAIN_TASK, &task_right_wheel);
 
-    wall_semaphore = xSemaphoreCreateBinary();
+    object_semaphore = xSemaphoreCreateBinary();
     TaskHandle_t ultrasonic_task;
     xTaskCreate(generate_sound_task, "ultrasonic thread", configMINIMAL_STACK_SIZE, NULL, MAIN_TASK, &ultrasonic_task);
 

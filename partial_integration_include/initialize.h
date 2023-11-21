@@ -82,6 +82,9 @@ void infrared_init() {
     gpio_init(RINFRARED_PIN);
     gpio_set_dir(RINFRARED_PIN, GPIO_IN);
 
+    gpio_init(BINFRARED_D0_PIN);
+    gpio_set_dir(BINFRARED_D0_PIN, GPIO_IN);
+
     adc_init();
     gpio_init(BINFRARED_PIN);
     gpio_set_dir(BINFRARED_PIN, GPIO_IN);

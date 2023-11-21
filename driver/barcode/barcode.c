@@ -18,6 +18,7 @@
 #define BINFRARED_3V3_PIN 13
 
 #define DELIMITER '*'
+#define FLIPPED_DELIMITER 'O'
 
 #define COLOR_THRESHOLD 1500
 
@@ -44,6 +45,9 @@ enum black_bar{
     no9 = 0b01010,
     no10 = 0b00110,
 };
+
+bool g_flipped_barcode = false;
+uint8_t g_barcode_index = 0;
 
 // Barcode 39 wiki for table, off_bit = black_bar, even_bit = white_bar
 char code_39_decoder(int odd_bit, int even_bit) {
@@ -113,6 +117,16 @@ void init_IR_barcode() {
 }
 
 uint8_t determine_odd_bit(uint16_t odd_count[]) {
+    if (g_flipped_barcode) {
+        uint8_t length = 5;
+        uint8_t temp;
+        for (int i = 0; i < length / 2; i++) {
+            temp = odd_count[i];
+            odd_count[i] = odd_count[length - i - 1];
+            odd_count[length - i - 1] = temp;
+        }
+    }
+
     int highest_indices[2] = {0, 1};
     uint16_t highest_count[2] = {odd_count[0], odd_count[1]};
 
@@ -134,8 +148,19 @@ uint8_t determine_odd_bit(uint16_t odd_count[]) {
 }
 
 uint8_t determine_even_bit(uint16_t even_count[]) {
+    if (g_flipped_barcode) {
+        uint8_t length = 4;
+        uint8_t temp;
+        for (int i = 0; i < length / 2; i++) {
+            temp = even_count[i];
+            even_count[i] = even_count[length - i - 1];
+            even_count[length - i - 1] = temp;
+        }
+    }
+
     int highest_index = 0;
     uint16_t highest_count = even_count[0];
+    
     for (int i = 1; i < 4; i++) {
         if (even_count[i] > highest_count) {
             highest_count = even_count[i];
@@ -147,18 +172,24 @@ uint8_t determine_even_bit(uint16_t even_count[]) {
 
 void determine_char(char decoded_value) {
     static char barcode[3] = {'\0'};
-    static int barcode_index = 0;
-    barcode[barcode_index] = decoded_value;
-    barcode_index++;
+    barcode[g_barcode_index] = decoded_value;
 
-    if (barcode_index == 3) {
-        if (barcode[0] == DELIMITER && barcode[2] == DELIMITER) {
-            printf("Decoded Char: %c\n", barcode[1]);
-        } else {
-            printf("Failed barcode reading: %c%c%c\n", barcode[0], barcode[1], barcode[2]);
-        }
-        barcode_index = 0;
+    if (g_barcode_index == 0 && decoded_value == DELIMITER) {
+        g_flipped_barcode = false;
+    } else if (g_barcode_index == 0 && decoded_value == FLIPPED_DELIMITER) {
+        barcode[0] = DELIMITER;
+        g_flipped_barcode = true;
     }
+
+    if (g_barcode_index == 2) {
+        printf("Barcode reading: %c%c%c\n", barcode[0], barcode[1], barcode[2]);
+        printf("Decoded Value: %c\n", barcode[1]);
+        g_flipped_barcode = false;
+        g_barcode_index = 0;
+        return;
+    }
+
+    g_barcode_index++;
 }
 
 void read_barcode(void* pvParameters) {
