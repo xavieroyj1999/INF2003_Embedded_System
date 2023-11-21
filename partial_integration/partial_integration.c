@@ -10,10 +10,15 @@
 #include "math.h"
 #include "semphr.h"
 #include "hardware/adc.h"
+#include "pico/cyw43_arch.h"
+#include "lwip/apps/httpd.h"
+#include "lwipopts.h"
 
+#include <global_variables.h>
+#include <ssi.h>
+#include <cgi.h>
 #include <FreeRTOSConfig.h>
 #include <declarations.h>
-#include <global_variables.h>
 #include <function_prototype.h>
 #include <ultrasonic.H>
 #include <barcode.h>

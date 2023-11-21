@@ -2,7 +2,6 @@
 #include "pico/cyw43_arch.h"
 #include "hardware/adc.h"
 #include "stdint.h"  // Include the header for uint32_t
-#include "global_variables.h"
 
 // Declare distance_travelled (extern indicates that it's declared elsewhere)
 // extern uint32_t distance_travelled;
@@ -30,14 +29,14 @@ u16_t ssi_handler(int iIndex, char *pcInsert, int iInsertLen) {
     break;
   case 2: // distance
     {
-      printed = snprintf(pcInsert, iInsertLen, "%d", g_distance_travelled);
-      printf(" Distance: %d \n", g_distance_travelled);
+      // printed = snprintf(pcInsert, iInsertLen, "%d", g_distance_travelled);
+      // printf(" Distance: %d \n", g_distance_travelled);
     }
     break;
   case 3: // barcode
     {
-      printed = snprintf(pcInsert, iInsertLen, "%c", g_barcode_result);
-      printf(" Barcode: %c \n", g_barcode_result);
+      printed = snprintf(pcInsert, iInsertLen, "%c", g_decoded_value);
+      printf(" Barcode: %c \n", g_decoded_value);
     }
     break;
   default:
@@ -46,6 +45,7 @@ u16_t ssi_handler(int iIndex, char *pcInsert, int iInsertLen) {
   }
 
   return (u16_t)printed;
+  return 0;
 }
 
 // Initialise the SSI handler
