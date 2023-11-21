@@ -15,11 +15,11 @@
 #include "lwipopts.h"
 
 #include <global_variables.h>
+#include <declarations.h>
+#include <function_prototype.h>
 #include <ssi.h>
 #include <cgi.h>
 #include <FreeRTOSConfig.h>
-#include <declarations.h>
-#include <function_prototype.h>
 #include <ultrasonic.H>
 #include <barcode.h>
 #include <initialize.h>
@@ -27,24 +27,6 @@
 
 #define WEB_TASK_PRIORITY (tskIDLE_PRIORITY + 1UL)
 #define WEB_TASK_STACK_SIZE ((configSTACK_DEPTH_TYPE)2048)
-
-static MessageBufferHandle_t send_choose_duty_cycle_buffer;
-static MessageBufferHandle_t receive_choose_duty_cycle_buffer;
-
-static MessageBufferHandle_t send_sync_duty_cycle_buffer;
-static MessageBufferHandle_t receive_sync_duty_cycle_buffer;
-
-static MessageBufferHandle_t g_leftWheelBuffer;
-static MessageBufferHandle_t g_rightWheelBuffer;
-
-static SemaphoreHandle_t left_wheel_task_complete;
-static SemaphoreHandle_t right_wheel_task_complete;
-static SemaphoreHandle_t barcode_task_sempahore;
-static SemaphoreHandle_t main_task_semaphore;
-static SemaphoreHandle_t magnetometer_task;
-static SemaphoreHandle_t straight_path_task_semaphore;
-static SemaphoreHandle_t object_semaphore;
-static SemaphoreHandle_t wall_semaphore;
 
 void webserver_task(__unused void *params)
 {
@@ -166,7 +148,7 @@ void interrupt_callback(uint gpio, uint32_t events)
         {
             time_elapsed = time_us_64() - start_time;
             distance = calculate_distance(time_elapsed);
-            if (distance < 5)
+            if (distance < 10)
             {
                 xSemaphoreGive(object_semaphore);
                 g_object_detected = true;
@@ -363,7 +345,7 @@ void left_wheel_task(void *pvParameters)
             {
                 left_wheel_forward();
                 vTaskDelay(50);
-                if (g_left_encoder_interrupts - current_left_wheel_count > 5)
+                if (g_left_encoder_interrupts - current_left_wheel_count > 4)
                     break;
             }
         }
@@ -373,7 +355,7 @@ void left_wheel_task(void *pvParameters)
             {
                 left_wheel_backward();
                 vTaskDelay(50);
-                if (g_left_encoder_interrupts - current_left_wheel_count > 5)
+                if (g_left_encoder_interrupts - current_left_wheel_count > 4)
                     break;
             }
         }
@@ -383,7 +365,7 @@ void left_wheel_task(void *pvParameters)
             {
                 left_wheel_backward();
                 vTaskDelay(50);
-                if (g_left_encoder_interrupts - current_left_wheel_count > 10)
+                if (g_left_encoder_interrupts - current_left_wheel_count > 9)
                     break;
             }
         }
@@ -414,7 +396,7 @@ void right_wheel_task(void *pvParameters)
             {
                 right_wheel_forward();
                 vTaskDelay(50);
-                if (g_right_encoder_interrupts - current_right_wheel_count > 5)
+                if (g_right_encoder_interrupts - current_right_wheel_count > 4)
                     break;
             }
         }
@@ -424,7 +406,7 @@ void right_wheel_task(void *pvParameters)
             {
                 right_wheel_backward();
                 vTaskDelay(50);
-                if (g_right_encoder_interrupts - current_right_wheel_count > 5)
+                if (g_right_encoder_interrupts - current_right_wheel_count > 4)
                     break;
             }
         }
@@ -434,7 +416,7 @@ void right_wheel_task(void *pvParameters)
             {
                 right_wheel_forward();
                 vTaskDelay(50);
-                if (g_right_encoder_interrupts - current_right_wheel_count > 10)
+                if (g_right_encoder_interrupts - current_right_wheel_count > 9)
                     break;
             }
         }
@@ -554,7 +536,7 @@ void generate_sound_task(void *pvParameters)
 {
     while (true)
     {
-        vTaskDelay(1000);
+        vTaskDelay(100);
         gpio_put(TRIG_PIN, HIGH);
         vTaskDelay(1);
         gpio_put(TRIG_PIN, LOW);
@@ -679,8 +661,6 @@ void main_task()
             gpio_set_irq_enabled_with_callback(ECHO_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &interrupt_callback);
             gpio_set_irq_enabled_with_callback(LINFRARED_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
             gpio_set_irq_enabled_with_callback(RINFRARED_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
-            gpio_set_irq_enabled_with_callback(LENCODER_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
-            gpio_set_irq_enabled_with_callback(RENCODER_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
             xSemaphoreGive(straight_path_task_semaphore);
             if (xSemaphoreTake(object_semaphore, pdMS_TO_TICKS(5000)) == pdPASS)
             {
@@ -722,8 +702,8 @@ void start_tasks()
     xTaskCreate(main_task, "main thread", configMINIMAL_STACK_SIZE, NULL, MAIN_TASK, &task_main);
 
     // Start the webserver task
-    // TaskHandle_t task_webserver;
-    // xTaskCreate(webserver_task, "web server thread", configMINIMAL_STACK_SIZE, NULL, WEB_TASK_PRIORITY, &task_webserver);
+    TaskHandle_t task_webserver;
+    xTaskCreate(webserver_task, "web server thread", configMINIMAL_STACK_SIZE, NULL, WEB_TASK_PRIORITY, &task_webserver);
 
     send_choose_duty_cycle_buffer = xMessageBufferCreate(mbaTASK_MESSAGE_BUFFER_SIZE);
     receive_choose_duty_cycle_buffer = xMessageBufferCreate(mbaTASK_MESSAGE_BUFFER_SIZE);

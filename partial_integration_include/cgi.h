@@ -3,9 +3,10 @@
 
 const char *cgi_synchronise_wheels_handler(int iIndex, int iNumParams, char *pcParam[], char *pcValue[])
 {
+    double duty_cycle_ratio = 1;
     // I don't need to care about the params
-    // gpio_set_irq_enabled_with_callback(LINFRARED_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
-    // gpio_set_irq_enabled_with_callback(RINFRARED_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
+    gpio_set_irq_enabled_with_callback(LINFRARED_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
+    gpio_set_irq_enabled_with_callback(RINFRARED_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
     printf("Synchronising wheels\n");
     xMessageBufferSend(
         send_sync_duty_cycle_buffer,
@@ -17,6 +18,12 @@ const char *cgi_synchronise_wheels_handler(int iIndex, int iNumParams, char *pcP
         (void *)&duty_cycle_ratio,
         sizeof(duty_cycle_ratio),
         portMAX_DELAY);
+    printf("Duty cycle ratio: %f\n", duty_cycle_ratio);
+    gpio_set_irq_enabled_with_callback(LINFRARED_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
+    gpio_set_irq_enabled_with_callback(RINFRARED_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
+    gpio_set_irq_enabled_with_callback(LENCODER_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
+    gpio_set_irq_enabled_with_callback(RENCODER_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
+    gpio_set_irq_enabled_with_callback(BINFRARED_D0_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
 
     // Return HTML back to the server
     return "/index.shtml";

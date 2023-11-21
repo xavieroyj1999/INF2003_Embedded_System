@@ -16,3 +16,21 @@ float g_degree_thresholds[4];
 int g_barcode_index = 0;
 bool g_flipped_barcode = false;
 char g_decoded_value = '\0';
+
+static MessageBufferHandle_t send_choose_duty_cycle_buffer;
+static MessageBufferHandle_t receive_choose_duty_cycle_buffer;
+
+static MessageBufferHandle_t send_sync_duty_cycle_buffer;
+static MessageBufferHandle_t receive_sync_duty_cycle_buffer;
+
+static MessageBufferHandle_t g_leftWheelBuffer;
+static MessageBufferHandle_t g_rightWheelBuffer;
+
+static SemaphoreHandle_t left_wheel_task_complete;
+static SemaphoreHandle_t right_wheel_task_complete;
+static SemaphoreHandle_t barcode_task_sempahore;
+static SemaphoreHandle_t main_task_semaphore;
+static SemaphoreHandle_t magnetometer_task;
+static SemaphoreHandle_t straight_path_task_semaphore;
+static SemaphoreHandle_t object_semaphore;
+static SemaphoreHandle_t wall_semaphore;
