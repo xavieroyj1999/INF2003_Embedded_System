@@ -1,31 +1,25 @@
 #include "lwip/apps/httpd.h"
 #include "pico/cyw43_arch.h"
 
+// Synchronise wheels using wifi
 const char *cgi_synchronise_wheels_handler(int iIndex, int iNumParams, char *pcParam[], char *pcValue[])
 {
     double duty_cycle_ratio = 1;
-    // I don't need to care about the params
-    gpio_set_irq_enabled_with_callback(LINFRARED_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
-    gpio_set_irq_enabled_with_callback(RINFRARED_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
-    printf("Synchronising wheels\n");
-    xMessageBufferSend(
-        send_sync_duty_cycle_buffer,
-        (void *)&duty_cycle_ratio,
-        sizeof(duty_cycle_ratio),
-        portMAX_DELAY);
-    xMessageBufferReceive(
-        receive_sync_duty_cycle_buffer,
-        (void *)&duty_cycle_ratio,
-        sizeof(duty_cycle_ratio),
-        portMAX_DELAY);
-    printf("Duty cycle ratio: %f\n", duty_cycle_ratio);
-    gpio_set_irq_enabled_with_callback(LINFRARED_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
-    gpio_set_irq_enabled_with_callback(RINFRARED_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
-    gpio_set_irq_enabled_with_callback(LENCODER_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
-    gpio_set_irq_enabled_with_callback(RENCODER_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
-    gpio_set_irq_enabled_with_callback(BINFRARED_D0_PIN, GPIO_IRQ_EDGE_RISE, false, &interrupt_callback);
 
-    // Return HTML back to the server
+    enable_encoder_interrupts();
+    xMessageBufferSend(
+        g_send_sync_duty_cycle_buffer,
+        (void *)&duty_cycle_ratio,
+        sizeof(duty_cycle_ratio),
+    0);
+    xMessageBufferReceive(
+        g_receive_sync_duty_cycle_buffer,
+        (void *)&duty_cycle_ratio,
+        sizeof(duty_cycle_ratio),
+        portMAX_DELAY
+    );
+    disable_all_interrupts();
+
     return "/index.shtml";
 }
 
@@ -43,7 +37,6 @@ const char *cgi_start_handler(int iIndex, int iNumParams, char *pcParam[], char 
     //         printf("start");
     // }
     // Send the index page back to the user
-    printf("Loading SHTML\n");
     return "/index.shtml";
 }
 
@@ -66,6 +59,5 @@ static const tCGI cgi_handlers[] = {
 
 void cgi_init(void)
 {
-    printf("DOES CGI WORKS\n");
     http_set_cgi_handlers(cgi_handlers, 2);
 }

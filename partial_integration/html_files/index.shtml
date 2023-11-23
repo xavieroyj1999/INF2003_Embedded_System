@@ -26,10 +26,12 @@
         <h4> | INF2003 </h4>
     </div>
     <div class="container">
+        <p>Bob has a gun</p>
         <!-- <div class="container p-3 my-3 bg-dark text-white"> <h1>Robot Car Dashboard</h1> </div> -->
         <br>
         <div style="margin: auto; align-items: center; text-align: center;">
             <a href="/synchronise-wheels.cgi">Synchronise Wheels</a>
+            <p>Barcode value is: <!--#barcode--></p>
             <!-- <a href="/start.cgi?start=1">START</a>
             <br />
             <img margin="auto" width="570" height="380"

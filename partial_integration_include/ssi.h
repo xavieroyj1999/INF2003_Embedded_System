@@ -17,13 +17,11 @@ u16_t ssi_handler(int iIndex, char *pcInsert, int iInsertLen)
     case 1:
     {
         printed = snprintf(pcInsert, iInsertLen, "%c", g_decoded_value);
-        printf("Barcode: %c \n", g_decoded_value);
         break;
     }
     case 2:
     {
         printed = snprintf(pcInsert, iInsertLen, "%d", g_distance_travelled);
-        printf("Distance: %d \n", g_distance_travelled);
         break;
     }
     default:

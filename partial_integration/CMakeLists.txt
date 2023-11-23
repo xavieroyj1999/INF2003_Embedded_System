@@ -24,7 +24,6 @@ target_link_libraries(partial_integration
     pico_lwip_http
     pico_lwip_iperf
     hardware_adc
-    m
 )
 
 # Create map/bin/hex file etc.

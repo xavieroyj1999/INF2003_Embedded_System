@@ -31,7 +31,7 @@ void motor_control_init()
     gpio_set_function(ENA_PIN, GPIO_FUNC_PWM);
     pwm_set_clkdiv(GP5_SLICE, 100);
     pwm_set_wrap(GP5_SLICE, PWM_FREQ);
-    pwm_set_chan_level(GP5_SLICE, PWM_CHAN_B, PWM_FREQ);
+    pwm_set_chan_level(GP5_SLICE, PWM_CHAN_B, PWM_FREQ * 0.5);
     pwm_set_enabled(GP5_SLICE, true);
 
     gpio_init(INA1_PIN);
@@ -46,7 +46,7 @@ void motor_control_init()
     gpio_set_function(ENB_PIN, GPIO_FUNC_PWM);
     pwm_set_clkdiv(GP0_SLICE, 100);
     pwm_set_wrap(GP0_SLICE, PWM_FREQ);
-    pwm_set_chan_level(GP0_SLICE, PWM_CHAN_A, PWM_FREQ);
+    pwm_set_chan_level(GP0_SLICE, PWM_CHAN_A, PWM_FREQ * 0.5);
     pwm_set_enabled(GP0_SLICE, true);
 
     gpio_init(INB1_PIN);
@@ -65,18 +65,6 @@ void encoder_init()
 
     gpio_init(RENCODER_PIN);
     gpio_set_dir(RENCODER_PIN, GPIO_IN);
-}
-
-void magnetometer_init()
-{
-    i2c_init(I2C_PORT, 100 * 1000);
-    gpio_set_function(SDA_PIN, GPIO_FUNC_I2C);
-    gpio_set_function(SCL_PIN, GPIO_FUNC_I2C);
-    gpio_pull_up(SDA_PIN);
-    gpio_pull_up(SCL_PIN);
-
-    uint8_t const config_continuous[] = {MR_REG_M, CONTINUOUS_MODE};
-    i2c_write_blocking(I2C_PORT, MAGNETIC_SENSOR_ADDRESS, config_continuous, 2, false);
 }
 
 void infrared_init()
@@ -100,7 +88,7 @@ void ultrasonic_init()
 {
     gpio_init(TRIG_PIN);
     gpio_set_dir(TRIG_PIN, GPIO_OUT);
-    gpio_put(TRIG_PIN, 0);
+    gpio_put(TRIG_PIN, LOW);
 
     gpio_init(ECHO_PIN);
     gpio_set_dir(ECHO_PIN, GPIO_IN);

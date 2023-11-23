@@ -1,3 +1,4 @@
+// General definitions
 #define LOW 0
 #define HIGH 1
 #define DEBOUNCE_TIME 50000 // 50ms
@@ -11,7 +12,8 @@ enum directionEvent
     WEST = 0x08
 };
 
-// For Decoder
+/* For Barcode 39 Decoder
+wide bar = 1, narrow bar = 0 */
 enum white_bar
 {
     add0 = 0b0100,
@@ -20,7 +22,6 @@ enum white_bar
     add30 = 0b1000,
 };
 
-// For Decoder
 enum black_bar
 {
     no1 = 0b10001,
@@ -78,18 +79,10 @@ enum black_bar
 #define DELIMITER '*'
 #define FLIPPED_DELIMITER 'O'
 
-// Magnetometer
-#define SDA_PIN 18
-#define SCL_PIN 19
-
-#define I2C_PORT i2c1
-
-#define RADIANS_TO_DEGREES 57.29577
-
-#define MAGNETIC_SENSOR_ADDRESS 0x1E
-#define MR_REG_M 0x02
-#define CONTINUOUS_MODE 0x00
-#define OUT_X_H_M 0x03
-
 // Buffer
 #define mbaTASK_MESSAGE_BUFFER_SIZE (60)
+#define WEB_TASK_STACK_SIZE ((configSTACK_DEPTH_TYPE)2048)
+
+// Task Priorities
+#define MAIN_TASK (tskIDLE_PRIORITY + 1UL)
+#define WEB_TASK_PRIORITY (tskIDLE_PRIORITY + 1UL)
