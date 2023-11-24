@@ -3,15 +3,6 @@
 #define HIGH 1
 #define DEBOUNCE_TIME 50000 // 50ms
 
-enum directionEvent
-{
-    STAY = 0x00,
-    NORTH = 0x01,
-    EAST = 0x02,
-    SOUTH = 0x04,
-    WEST = 0x08
-};
-
 /* For Barcode 39 Decoder
 wide bar = 1, narrow bar = 0 */
 enum white_bar
@@ -48,18 +39,22 @@ enum black_bar
 #define GP0_SLICE 0
 #define GP5_SLICE 2
 
+enum directionEvent
+{
+    STAY = 0x00,
+    NORTH = 0x01,
+    EAST = 0x02,
+    SOUTH = 0x04,
+    WEST = 0x08
+};
+
 // Ultrasonic
 #define TRIG_PIN 6
 #define ECHO_PIN 7
 
-#define ULTRASONIC_3V3_PIN 8
-
 // Wheel Encoder
 #define LENCODER_PIN 14
 #define RENCODER_PIN 15
-
-#define LENCODER_3V3_PIN 9
-#define RENCODER_3V3_PIN 10
 
 #define ONE_INTERRUPT 1
 
@@ -68,10 +63,6 @@ enum black_bar
 #define RINFRARED_PIN 17
 #define BINFRARED_D0_PIN 20
 #define BINFRARED_PIN 26
-
-#define LINFRARED_3V3_PIN 11
-#define RINFRARED_3V3_PIN 12
-#define BINFRARED_3V3_PIN 13
 
 #define IR_ADC_CHANNEL 0
 

@@ -12,8 +12,6 @@
 #define TRIG_PIN 6
 #define ECHO_PIN 7
 
-#define MAGNETO_3V3_PIN 8
-
 #define HIGH 1
 #define LOW 0
 
@@ -23,9 +21,8 @@ void handle_sound_interrupt(uint gpio, uint32_t events);
 void generate_sound_task(void* pvParameters);
 void print_distance(double distance);
 
-// Callback function for the repeating timer.
 void generate_sound_task(void* pvParameters) {
-    while(1) {
+    while(true) {
         vTaskDelay(1000);
         gpio_put(TRIG_PIN, HIGH);
         vTaskDelay(1);
@@ -33,16 +30,12 @@ void generate_sound_task(void* pvParameters) {
     }
 }
 
-//Configure pins
 void init_gpio(){
     gpio_init(TRIG_PIN);
     gpio_set_dir(TRIG_PIN, GPIO_OUT);
     gpio_put(TRIG_PIN, LOW);
     gpio_init(ECHO_PIN);
     gpio_set_dir(ECHO_PIN, GPIO_IN);
-    gpio_init(MAGNETO_3V3_PIN);
-    gpio_set_dir(MAGNETO_3V3_PIN, GPIO_OUT);
-    gpio_put(MAGNETO_3V3_PIN, HIGH);
 }
 
 void handle_sound_interrupt(uint gpio, uint32_t events) {

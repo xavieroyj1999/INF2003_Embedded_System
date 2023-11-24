@@ -46,32 +46,34 @@ void init_accelerometer() {
 }
  
 bool request_magneto_read() { 
+    // Send register to read from
     i2c_write_blocking(I2C_PORT, MAGNETIC_SENSOR_ADDRESS, &OUT_X_H_M, 1, true); 
  
     uint8_t buffer[6]; 
     i2c_read_blocking(I2C_PORT, MAGNETIC_SENSOR_ADDRESS, buffer, 6, false); 
  
-    int16_t x = (buffer[0] << 8 | buffer[1]); 
-    int16_t z = (buffer[2] << 8 | buffer[3]); 
-    int16_t y = (buffer[4] << 8 | buffer[5]); 
+    int16_t x = (buffer[0] << 8 | buffer[1]); // OUT_X_H_M << 8, OUT_X_L_M
+    int16_t z = (buffer[2] << 8 | buffer[3]); // OUT_Z_H_M << 8, OUT_Z_L_M
+    int16_t y = (buffer[4] << 8 | buffer[5]); // OUT_Y_H_M << 8, OUT_Y_L_M
 
     printf("Magnetic Field (X, Y, Z): %d, %d, %d\n", x, y, z);
 
-    float degree = atan2(y, x) * RADIANS_TO_DEGREES;
+    float degree = atan2(y, x) * RADIANS_TO_DEGREES; // math formula from https://arduino.stackexchange.com/questions/18625/converting-three-axis-magnetometer-to-degrees
     if (degree < 0) degree += 360;
     printf("Degree: %f\n", degree);
     return true;
 }
 
 bool request_accelero_read() {
+    // Send register to read from
     i2c_write_blocking(I2C_PORT, ACCELEROMETER_ADDRESS, &OUT_X_L_A, 1, true);
 
     uint8_t buffer[6];
     i2c_read_blocking(I2C_PORT, ACCELEROMETER_ADDRESS, buffer, 6, false);
 
-    int16_t accel_x = (buffer[1] << 8 | buffer[0]);
-    int16_t accel_y = (buffer[3] << 8 | buffer[2]);
-    int16_t accel_z = (buffer[5] << 8 | buffer[4]);
+    int16_t accel_x = (buffer[1] << 8 | buffer[0]); // OUT_X_H_A << 8, OUT_X_L_A
+    int16_t accel_y = (buffer[3] << 8 | buffer[2]); // OUT_Y_H_A << 8, OUT_Y_L_A
+    int16_t accel_z = (buffer[5] << 8 | buffer[4]); // OUT_Z_H_A << 8, OUT_Z_L_A
 
     printf("Accelerometer (X, Y, Z): %d, %d, %d\n", accel_x, accel_y, accel_z);
 

@@ -15,7 +15,6 @@
 
 #define IR_PIN 26
 #define IR_ADC_CHANNEL 0
-#define BINFRARED_3V3_PIN 13
 
 #define DELIMITER '*'
 #define FLIPPED_DELIMITER 'O'
@@ -24,7 +23,7 @@
 
 #define BARCODE_TASK_PRIORITY (tskIDLE_PRIORITY + 1UL)
 
-// For Decoder
+// for even bits check sum
 enum white_bar{
     add0 = 0b0100,
     add10 = 0b0010,
@@ -32,7 +31,7 @@ enum white_bar{
     add30 = 0b1000,
 };
 
-// For Decoder
+// for odd bits check sum
 enum black_bar{
     no1 = 0b10001,
     no2 = 0b01001,
@@ -54,6 +53,8 @@ char code_39_decoder(int odd_bit, int even_bit) {
     char pre_defined_code_39_values[40] = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ-. *";
 
     int index_of_code_39 = 0;
+
+    // Determine check sum of white bar based on enum
     switch (even_bit) {
         case add0:
             index_of_code_39 += 0;
@@ -69,6 +70,7 @@ char code_39_decoder(int odd_bit, int even_bit) {
             break;
     }
 
+    // Determine check sum of balck bar based on enum
     switch (odd_bit) {
         case no1:
             index_of_code_39 += 0;
@@ -109,21 +111,19 @@ void init_IR_barcode() {
     gpio_init(IR_PIN);
     gpio_set_dir(IR_PIN, GPIO_IN);
 
-    gpio_init(BINFRARED_3V3_PIN);
-    gpio_set_dir(BINFRARED_3V3_PIN, GPIO_OUT);
-    gpio_put(BINFRARED_3V3_PIN, HIGH);
-
     adc_select_input(IR_ADC_CHANNEL);
 }
 
+// black will have 5 bits, 2 wide 3 narrow
 uint8_t determine_odd_bit(uint16_t odd_count[]) {
+    // flip the array if the barcode is flipped
     if (g_flipped_barcode) {
         uint8_t length = 5;
         uint8_t temp;
-        for (int i = 0; i < length / 2; i++) {
-            temp = odd_count[i];
-            odd_count[i] = odd_count[length - i - 1];
-            odd_count[length - i - 1] = temp;
+        for (int index = 0; index < length / 2; index++) {
+            temp = odd_count[index];
+            odd_count[index] = odd_count[length - index - 1];
+            odd_count[length - index - 1] = temp;
         }
     }
 
@@ -131,15 +131,15 @@ uint8_t determine_odd_bit(uint16_t odd_count[]) {
     uint16_t highest_count[2] = {odd_count[0], odd_count[1]};
 
     // Find the two highest times and their indices
-    for (int i = 2; i < 5; i++) {
-        if (odd_count[i] > highest_count[0]) {
+    for (int index = 2; index < 5; index++) {
+        if (odd_count[index] > highest_count[0]) {
             highest_count[1] = highest_count[0];
             highest_indices[1] = highest_indices[0];
-            highest_count[0] = odd_count[i];
-            highest_indices[0] = i;
-        } else if (odd_count[i] > highest_count[1]) {
-            highest_count[1] = odd_count[i];
-            highest_indices[1] = i;
+            highest_count[0] = odd_count[index];
+            highest_indices[0] = index;
+        } else if (odd_count[index] > highest_count[1]) {
+            highest_count[1] = odd_count[index];
+            highest_indices[1] = index;
         }
     }
 
@@ -147,24 +147,27 @@ uint8_t determine_odd_bit(uint16_t odd_count[]) {
     return (1 << (4 - highest_indices[0])) | (1 << (4- highest_indices[1]));
 }
 
+// white will have 4 bits, 1 wide 3 narrow
 uint8_t determine_even_bit(uint16_t even_count[]) {
+    // flip the array if the barcode is flipped
     if (g_flipped_barcode) {
         uint8_t length = 4;
         uint8_t temp;
-        for (int i = 0; i < length / 2; i++) {
-            temp = even_count[i];
-            even_count[i] = even_count[length - i - 1];
-            even_count[length - i - 1] = temp;
+        for (int index = 0; index < length / 2; index++) {
+            temp = even_count[index];
+            even_count[index] = even_count[length - index - 1];
+            even_count[length - index - 1] = temp;
         }
     }
 
     int highest_index = 0;
     uint16_t highest_count = even_count[0];
     
-    for (int i = 1; i < 4; i++) {
-        if (even_count[i] > highest_count) {
-            highest_count = even_count[i];
-            highest_index = i;
+    // Find the highest time and its index
+    for (int index = 1; index < 4; index++) {
+        if (even_count[index] > highest_count) {
+            highest_count = even_count[index];
+            highest_index = index;
         }
     }
     return (1 << (3 - highest_index));
@@ -205,6 +208,8 @@ void read_barcode(void* pvParameters) {
     uint32_t adc_value = 0;
     while(true) {
         adc_value = adc_read();
+
+        // First bit is always black, thus wait for black before starting to read
         if (odd_bit_index == 0 && even_bit_index == 0 && adc_value > COLOR_THRESHOLD) {
             start_count = true;
         }
@@ -216,6 +221,7 @@ void read_barcode(void* pvParameters) {
                 white_count++;
             }
 
+            // If we read black for too long, reset everything as there is a wall
             if (black_count >250) {
                 odd_bit_index = even_bit_index = 0;
                 black_count = white_count = 0;
@@ -224,12 +230,14 @@ void read_barcode(void* pvParameters) {
                 while(adc_read() > COLOR_THRESHOLD);
             }
 
+            // If the current color is black and the last color is white, add the white count to the even_count array
             if(adc_value >= COLOR_THRESHOLD && !last_color_black && start_count) {
                 even_count[even_bit_index] = white_count;
                 even_bit_index++;
                 printf("Even Count: %d\n", white_count);
                 black_count = 0;
                 last_color_black = true;
+            // Else if the current color is white and the last color is black, add the black count to the odd_count array
             } else if (adc_value < COLOR_THRESHOLD && last_color_black && start_count) {
                 odd_count[odd_bit_index] = black_count;
                 odd_bit_index++;
@@ -260,8 +268,8 @@ int main() {
     init_IR_barcode();
 
     TaskHandle_t barcode_task;
-    xTaskCreate(read_barcode, "temp thread", configMINIMAL_STACK_SIZE, NULL, BARCODE_TASK_PRIORITY, &barcode_task);
+    xTaskCreate(read_barcode, "barcode thread", configMINIMAL_STACK_SIZE, NULL, BARCODE_TASK_PRIORITY, &barcode_task);
     vTaskStartScheduler();
-    while(1);
+    while(true);
     return 0;
 }

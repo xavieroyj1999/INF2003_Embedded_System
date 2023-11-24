@@ -180,11 +180,7 @@ void user_selection_task(void* pvParameters) {
 
 // Start Tasks
 void start_tasks() {
-
-    // Create user input tasks
     TaskHandle_t user_input_task;
-
-    // Start FreeRTOS scheduler
     xTaskCreate(user_selection_task, "user selection task", configMINIMAL_STACK_SIZE, NULL, USER_INPUT_TASK, &user_input_task);
 
     vTaskStartScheduler();

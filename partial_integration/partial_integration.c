@@ -152,7 +152,6 @@ void main_task()
 int main()
 {
     stdio_init_all();
-    high_pin_init();
 
     infrared_init();
     encoder_init();

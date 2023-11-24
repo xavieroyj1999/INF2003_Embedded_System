@@ -24,7 +24,6 @@ int main()
 {
     stdio_init_all();
 
-    high_pin_init();
     motor_control_init();
     encoder_init();
     magnetometer_init();

@@ -1,29 +1,3 @@
-void high_pin_init() {
-    gpio_init(ULTRASONIC_3V3_PIN);
-    gpio_set_dir(ULTRASONIC_3V3_PIN, GPIO_OUT);
-    gpio_put(ULTRASONIC_3V3_PIN, HIGH);
-
-    gpio_init(LENCODER_3V3_PIN);
-    gpio_set_dir(LENCODER_3V3_PIN, GPIO_OUT);
-    gpio_put(LENCODER_3V3_PIN, HIGH);
-
-    gpio_init(RENCODER_3V3_PIN);
-    gpio_set_dir(RENCODER_3V3_PIN, GPIO_OUT);
-    gpio_put(RENCODER_3V3_PIN, HIGH);
-
-    gpio_init(LINFRARED_3V3_PIN);
-    gpio_set_dir(LINFRARED_3V3_PIN, GPIO_OUT);
-    gpio_put(LINFRARED_3V3_PIN, HIGH);
-
-    gpio_init(RINFRARED_3V3_PIN);
-    gpio_set_dir(RINFRARED_3V3_PIN, GPIO_OUT);
-    gpio_put(RINFRARED_3V3_PIN, HIGH);
-
-    gpio_init(BINFRARED_3V3_PIN);
-    gpio_set_dir(BINFRARED_3V3_PIN, GPIO_OUT);
-    gpio_put(BINFRARED_3V3_PIN, HIGH);
-}
-
 void motor_control_init() {
     // Motor A
     gpio_set_function(ENA_PIN, GPIO_FUNC_PWM);

@@ -1,8 +1,7 @@
 /* DISCLAIMER
 ChatGPT is used in this file. Stack and Queue baseline was created with geeks4geeks stack/queue example fed into ChatGPT and modified from then on.
 
-Thus Queue and Stack functions are not original, but the rest of the code is original.
-*/
+Thus Queue and Stack functions are not original, but the rest of the code is original.*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -172,8 +171,6 @@ void setCarStart(struct car* myCar, int x, int y) {
     myCar->current_location.y_coord = y;
 }
 
-
-
 struct StackNode {
     struct coordinates* data;
     struct StackNode* next;
@@ -197,7 +194,6 @@ void push(struct Stack* stack, struct coordinates data) {
     newNode->next = stack->top;
     stack->top = newNode;
 }
-
 
 void pop(struct Stack* stack) {
     struct StackNode* temp = stack->top;
@@ -398,12 +394,7 @@ int main() {
     struct cell map[MAX_SIZE][MAX_SIZE];
     mapInit(map);
 
-    struct Queue* q = createQueue();
-    struct Stack* s = createStack();
-    struct coordinates start_coord = { 0, 8 };
-    enQueue(q, start_coord);
-    push(s, start_coord);
-
+    // Manually Generate Map
     setWall(map, 0, 0, DOWN);
     setWall(map, 0, 1, RIGHT);
     setWall(map, 1, 1, DOWN);
@@ -418,12 +409,20 @@ int main() {
     setWall(map, 5, 6, RIGHT);
     setWall(map, 6, 6, DOWN);
 
-    setStart(map, 0, 8);
-    setGoal(map, 0, 0);
+    struct Queue* q = createQueue();
+    struct Stack* s = createStack();
+
+    struct coordinates start_coord = { 0, 8 }; // Choose Start Location
+    struct coordinates goal_coord = { 0, 0 }; // Choose Start Location
+    enQueue(q, start_coord);
+    push(s, start_coord);
+
+    setStart(map, start_coord.x_coord, start_coord.y_coord);
+    setGoal(map, goal_coord.x_coord, goal_coord.y_coord);
 
     while (explore_map(map, s)) {
-        printVisitedMap(map);
-        printf("\n");
+        //printVisitedMap(map);
+        //printf("\n");
     }
 
     printVisitedMap(map);
