@@ -49,7 +49,7 @@
 |            | [Barcode](driver/barcode)                                                       |
 |            | [Drive through and detect barcode-decode and send to WiFi](partial_integration) |
 | Joo Wee    | Set-up of project structure                                                     |
-|            | [Mapping](driver/maze_solving)                                                       |
+|            | [Maze Solving](driver/maze_solving)                                             |
 |            | [Right/left-angle turn](partial_integration)                                    |
 |            | [Documentation](images)                                                         |
 
