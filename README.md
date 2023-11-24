@@ -25,7 +25,8 @@
 | Right Wall IR           | D0            | 17      | IN                  |
 | GY-511 (Magnetometer)   | SDA           | 18      | GPIO_FUNC_I2C       |
 |                         | SCL           | 19      | GPIO_FUNC_I2C       |
-| Barcode IR              | A0            | 26      | IN                  |
+| Barcode IR              | D0            | 20      | IN                  |
+|                         | A0            | 26      | IN                  |
 
 
 ## Block Diagram
