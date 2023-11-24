@@ -49,7 +49,7 @@
 |            | [Barcode](driver/barcode)                                                       |
 |            | [Drive through and detect barcode-decode and send to WiFi](partial_integration) |
 | Joo Wee    | Set-up of project structure                                                     |
-|            | [Mapping](driver/mapping)                                                       |
+|            | [Mapping](driver/maze_solving)                                                       |
 |            | [Right/left-angle turn](partial_integration)                                    |
 |            | [Documentation](images)                                                         |
 
@@ -58,7 +58,7 @@
 ### Driver
   - [Barcode](driver/barcode)
   - [Encoder](driver/encoder)
-  - [Mapping](driver/mapping)
+  - [Mapping](driver/maze_solving)
   - [Infrared](driver/irline)
   - [Magnetometer](driver/magnetometer)
   - [Motor](driver/motor)
