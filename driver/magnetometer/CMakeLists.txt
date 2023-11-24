@@ -17,4 +17,4 @@ pico_add_extra_outputs(magnometer)
 
 pico_enable_stdio_usb(magnometer 1)
 
-example_auto_set_url(magnometer)
+target_include_directories(magnometer PUBLIC ${PROJECT_SOURCE_DIR}/include)

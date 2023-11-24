@@ -6,6 +6,8 @@
 #include "hardware/pwm.h"
 #include "hardware/gpio.h"
 
+#include <FreeRTOSConfig.h>
+
 // Motor Configs
 #define PWM_FREQ 12500
 

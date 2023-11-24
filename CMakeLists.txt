@@ -13,14 +13,11 @@ set(PICO_BOARD pico_w)
 # Initialize the SDK
 pico_sdk_init()
 
+include(FreeRTOS_Kernel_import.cmake)
+
 # Add executable. Default name is the project name
-add_executable(main main.c)
-
-# Add required libraries
-target_link_libraries(main
-    pico_stdlib              # for core functionality
-    pico_cyw43_arch_none     # we need Wifi to access the GPIO, but we don't need anything else
-)
-
-# Create map/bin/hex file etc.
-pico_add_extra_outputs(main)
+add_subdirectory(driver)
+add_subdirectory(src)
+add_subdirectory(partial_integration)
+include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/partial_integration_include)

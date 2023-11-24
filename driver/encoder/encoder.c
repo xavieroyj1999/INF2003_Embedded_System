@@ -4,7 +4,9 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-#define PRINT_TASK (tskIDLE_PRIORITY + 1UL)
+#include <FreeRTOSConfig.h>
+
+#define PERFORMANCE_TRACK_TASK (tskIDLE_PRIORITY + 1UL)
 
 //General Definations
 #define CONVERT_TO_MICROSECONDS 1000
@@ -74,7 +76,7 @@ void performance_track_task(void* pvParameters) {
 
 void start_tasks() {
     TaskHandle_t task_performance;
-    xTaskCreate(performance_tracking_task, "track performance thread", configMINIMAL_STACK_SIZE, NULL, PERFORMANCE_TRACK_TASK, &task_performance);
+    xTaskCreate(performance_track_task, "track performance thread", configMINIMAL_STACK_SIZE, NULL, PERFORMANCE_TRACK_TASK, &task_performance);
 
     vTaskStartScheduler();
 }
