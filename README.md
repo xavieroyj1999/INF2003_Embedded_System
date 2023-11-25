@@ -63,7 +63,7 @@
 ### Driver
   - [Barcode](driver/barcode)
   - [Encoder](driver/encoder)
-  - [Mapping](driver/maze_solving)
+  - [Maze Solving](driver/maze_solving)
   - [Infrared](driver/irline)
   - [Magnetometer](driver/magnetometer)
   - [Motor](driver/motor)
@@ -72,6 +72,7 @@
 
 ### Partial Integration
   - [Partial Integration](partial_integration)
+  - [Partial Integration Include](partial_integration_include)
 
 ### Flow Chart & Block Diagrams
   - [Images](images)
