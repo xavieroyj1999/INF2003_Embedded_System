@@ -13,7 +13,7 @@
 ![turn_flow](../images/partial/partial_turn_flow.png)
 
 ## Drive through and detect barcode-decode and send to WiFi Flowchart
-  - Uses [Straight Path](#straight-path-flowchart) | [Infrared Interrupt](../partial_integration_include#left-right-front-infrared-interrupt-flowchart) | [Encoder Interrupt](../driver/encoder/README.md#flowchart)
+  - Uses [Straight Path](#straight-path-flowchart) | [Infrared Interrupt](../partial_integration_include#left-right-front-infrared-interrupt-flowchart) | [Encoder Interrupt](../driver/encoder/README.md#flowchart) | [Wi-Fi](../driver/wifi/README.md) | [Barcode](../driver/barcode/README.md#flowchart)
     
 ![barcode_wifi_flow](../images/partial/partial_barcode_flow.png)
 
