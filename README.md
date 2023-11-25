@@ -35,7 +35,7 @@
 
 ## Contributions
   - Demo: [driver](driver)
-  - Partial Integration: [partial integration](partial_integration)
+  - Partial Integration: [Partial Integration](partial_integration) | [Partial Integration Include](partial_integration_include)
   - Mapping Solution: [Maze Solving](driver/maze_solving)
 
 | Name       | Component                                                                       |
