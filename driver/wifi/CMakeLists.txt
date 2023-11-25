@@ -1,5 +1,5 @@
-set(WIFI_SSID "sakana")
-set(WIFI_PASSWORD "88888888")
+set(WIFI_SSID "wifiname")
+set(WIFI_PASSWORD "wifipassword")
 
 message("Running makefsdata python script")
 execute_process(COMMAND
