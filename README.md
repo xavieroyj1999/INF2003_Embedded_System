@@ -34,6 +34,10 @@
 
 
 ## Contributions
+  - Demo: [driver](driver)
+  - Partial Integration: [partial integration](partial_integration)
+  - Mapping Solution: [Maze Solving](driver/maze_solving)
+
 | Name       | Component                                                                       |
 |------------|---------------------------------------------------------------------------------|
 | Lee Kee    | [Encoder](driver/encoder)                                                       |
@@ -71,3 +75,6 @@
 
 ### Flow Chart & Block Diagrams
   - [Images](images)
+
+### Disclaimer
+  - We did not attempt final run, thus [src](src) and [include](include) will not be used.
