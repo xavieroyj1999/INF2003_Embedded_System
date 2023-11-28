@@ -1,16 +1,19 @@
 /* DISCLAIMER
 ChatGPT is used in this file. Stack and Queue baseline was created with geeks4geeks stack/queue example fed into ChatGPT and modified from then on.
 
+Additionally map printing was with the help of ChatGPT
+
 Thus Queue and Stack functions are not original, but the rest of the code is original.*/
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "pico/stdlib.h"
 
 #define MIN_ARRAY_SIZE 0
-#define MAX_ARRAY_SIZE 8
-#define MAX_SIZE 9
-
-typedef enum { false, true } bool;
+#define MAX_ARRAY_SIZE_X 5
+#define MAX_ARRAY_SIZE_Y 3
+#define MAX_SIZE_X 6
+#define MAX_SIZE_Y 4
 
 enum directionEvent {
     NORTH = 0x01,
@@ -27,6 +30,7 @@ enum directionDegree {
 };
 
 struct cell {
+    char travelledDirection;
     int walls;
     int cost;
     int start;
@@ -35,33 +39,42 @@ struct cell {
     bool barcode;
 };
 
-void mapInit(struct cell map[MAX_SIZE][MAX_SIZE]) {
-    for (int j = MIN_ARRAY_SIZE; j <= MAX_ARRAY_SIZE; j++) {
-        for (int i = MIN_ARRAY_SIZE; i <= MAX_ARRAY_SIZE; i++) {
+void mapInit(struct cell map[MAX_SIZE_X][MAX_SIZE_Y]) {
+    for (int j = MIN_ARRAY_SIZE; j <= MAX_ARRAY_SIZE_Y; j++) {
+        for (int i = MIN_ARRAY_SIZE; i <= MAX_ARRAY_SIZE_X; i++) {
             map[i][j].walls = 0x00;
             map[i][j].visited = false;
             map[i][j].barcode = false;
             map[i][j].cost = 0;
             map[i][j].start = false;
             map[i][j].goal = false;
+            map[i][j].travelledDirection = ' ';
 
             if (i == MIN_ARRAY_SIZE) map[i][j].walls |= WEST;
-            if (i == MAX_ARRAY_SIZE) map[i][j].walls |= EAST;
+            if (i == MAX_ARRAY_SIZE_X) map[i][j].walls |= EAST;
             if (j == MIN_ARRAY_SIZE) map[i][j].walls |= NORTH;
-            if (j == MAX_ARRAY_SIZE) map[i][j].walls |= SOUTH;
+            if (j == MAX_ARRAY_SIZE_Y) map[i][j].walls |= SOUTH;
         }
     }
 }
 
-void resetVisited(struct cell map[MAX_SIZE][MAX_SIZE]) {
-    for (int j = MIN_ARRAY_SIZE; j <= MAX_ARRAY_SIZE; j++) {
-        for (int i = MIN_ARRAY_SIZE; i <= MAX_ARRAY_SIZE; i++) {
+void resetVisited(struct cell map[MAX_SIZE_X][MAX_SIZE_Y]) {
+    for (int j = MIN_ARRAY_SIZE; j <= MAX_ARRAY_SIZE_Y; j++) {
+        for (int i = MIN_ARRAY_SIZE; i <= MAX_ARRAY_SIZE_X; i++) {
             map[i][j].visited = false;
         }
     }
 }
 
-void setWall(struct cell map[MAX_SIZE][MAX_SIZE], int x, int y, enum directionDegree carDirection) {
+void resetDirection(struct cell map[MAX_SIZE_X][MAX_SIZE_Y]) {
+    for (int j = MIN_ARRAY_SIZE; j <= MAX_ARRAY_SIZE_Y; j++) {
+        for (int i = MIN_ARRAY_SIZE; i <= MAX_ARRAY_SIZE_X; i++) {
+            map[i][j].travelledDirection = ' ';
+        }
+    }
+}
+
+void setWall(struct cell map[MAX_SIZE_X][MAX_SIZE_Y], int x, int y, enum directionDegree carDirection) {
     if (carDirection == UP) {
         map[x][y].walls |= NORTH;
         map[x][y - 1].walls |= SOUTH;
@@ -80,27 +93,27 @@ void setWall(struct cell map[MAX_SIZE][MAX_SIZE], int x, int y, enum directionDe
     }
 }
 
-void mapBarcode(struct cell map[MAX_SIZE][MAX_SIZE], int x, int y) {
+void mapBarcode(struct cell map[MAX_SIZE_X][MAX_SIZE_Y], int x, int y) {
     map[x][y].barcode = true;
 }
 
-void cellVisited(struct cell map[MAX_SIZE][MAX_SIZE], int x, int y) {
+void cellVisited(struct cell map[MAX_SIZE_X][MAX_SIZE_Y], int x, int y) {
     map[x][y].visited = true;
 }
 
-void setStart(struct cell map[MAX_SIZE][MAX_SIZE], int x, int y) {
+void setStart(struct cell map[MAX_SIZE_X][MAX_SIZE_Y], int x, int y) {
     map[x][y].start = true;
-    map[x][y].walls &= ~SOUTH;
+    map[x][y].walls &= ~WEST;
 }
 
-void setGoal(struct cell map[MAX_SIZE][MAX_SIZE], int x, int y) {
+void setGoal(struct cell map[MAX_SIZE_X][MAX_SIZE_Y], int x, int y) {
     map[x][y].goal = true;
-    map[x][y].walls &= ~NORTH;
+    map[x][y].walls &= ~EAST;
 }
 
-void printMap(struct cell map[MAX_SIZE][MAX_SIZE]) {
-    for (int j = MIN_ARRAY_SIZE; j <= MAX_ARRAY_SIZE; j++) {
-        for (int i = MIN_ARRAY_SIZE; i <= MAX_ARRAY_SIZE; i++) {
+void printMap(struct cell map[MAX_SIZE_X][MAX_SIZE_Y]) {
+    for (int j = MIN_ARRAY_SIZE; j <= MAX_ARRAY_SIZE_Y; j++) {
+        for (int i = MIN_ARRAY_SIZE; i <= MAX_ARRAY_SIZE_X; i++) {
             if (map[i][j].walls & NORTH) {
                 printf("----");
             } else {
@@ -108,35 +121,56 @@ void printMap(struct cell map[MAX_SIZE][MAX_SIZE]) {
             }
         }
         printf("\n");
-        for (int i = MIN_ARRAY_SIZE; i <= MAX_ARRAY_SIZE; i++) {
-            printf("%c%d%d%c", (map[i][j].walls & WEST) ? '|' : ' ', i, j, (map[i][j].walls & EAST) ? '|' : ' ');
+        for (int i = MIN_ARRAY_SIZE; i <= MAX_ARRAY_SIZE_X; i++) {
+            printf("%c ", (map[i][j].walls & WEST) ? '|' : ' ');
+            printf("%c ", map[i][j].travelledDirection);
+        }
+        if (map[MAX_ARRAY_SIZE_X][j].walls & EAST) {
+            printf("|");
         }
         printf("\n");
-        if (j == MAX_ARRAY_SIZE) {
-            for (int i = MIN_ARRAY_SIZE; i <= MAX_ARRAY_SIZE; i++) {
-                if (map[i][j].walls & SOUTH) {
-                    printf("----");
-                } else {
-                    printf("    ");
-                }
-            }
-            printf("\n");
+    }
+
+    for (int i = MIN_ARRAY_SIZE; i <= MAX_ARRAY_SIZE_X; i++) {
+        if (map[i][MAX_ARRAY_SIZE_Y].walls & SOUTH) {
+            printf("----");
+        } else {
+            printf("    ");
         }
     }
+
+    printf("\n");
 }
 
-void printVisitedMap(struct cell map[MAX_SIZE][MAX_SIZE]) {
-    for (int j = MIN_ARRAY_SIZE; j <= MAX_ARRAY_SIZE; j++) {
-        for (int i = MIN_ARRAY_SIZE; i <= MAX_ARRAY_SIZE; i++) {
-            if (map[i][j].visited == true) {
-                printf(" 1  ");
-            }
-            else {
-                printf(" 0  ");
+void printVisitedMap(struct cell map[MAX_SIZE_X][MAX_SIZE_Y]) {
+    for (int j = MIN_ARRAY_SIZE; j <= MAX_ARRAY_SIZE_Y; j++) {
+        for (int i = MIN_ARRAY_SIZE; i <= MAX_ARRAY_SIZE_X; i++) {
+            if (map[i][j].walls & NORTH) {
+                printf("----");
+            } else {
+                printf("    ");
             }
         }
         printf("\n");
+        for (int i = MIN_ARRAY_SIZE; i <= MAX_ARRAY_SIZE_X; i++) {
+            printf("%c ", (map[i][j].walls & WEST) ? '|' : ' ');
+            printf("%c ", map[i][j].visited ? 'X' : ' ');
+        }
+        if (map[MAX_ARRAY_SIZE_X][j].walls & EAST) {
+            printf("|");
+        }
+        printf("\n");
     }
+
+    for (int i = MIN_ARRAY_SIZE; i <= MAX_ARRAY_SIZE_X; i++) {
+        if (map[i][MAX_ARRAY_SIZE_Y].walls & SOUTH) {
+            printf("----");
+        } else {
+            printf("    ");
+        }
+    }
+
+    printf("\n");
 }
 
 struct coordinates {
@@ -210,7 +244,8 @@ bool isStackEmpty(struct Stack* stack) {
     }
 }
 
-bool explore_map(struct cell map[MAX_SIZE][MAX_SIZE], struct Stack* stack) {
+// Use of Depth First Search to explore the map
+bool explore_map(struct cell map[MAX_SIZE_X][MAX_SIZE_Y], struct Stack* stack) {
     if (isStackEmpty(stack)) {
         return false;
     }
@@ -218,17 +253,18 @@ bool explore_map(struct cell map[MAX_SIZE][MAX_SIZE], struct Stack* stack) {
     int current_x = stack->top->data->x_coord;
     int current_y = stack->top->data->y_coord;
 
+    // As long as adjacent cell is not a wall and has not been visited, it will be added to the stack
     if (!(map[current_x][current_y].walls & NORTH) && (current_y > MIN_ARRAY_SIZE) && map[current_x][current_y - 1].visited == false) {
         struct coordinates north_coord = { current_x, current_y - 1 };
         cellVisited(map, current_x, current_y - 1);
         push(stack, north_coord);
     }
-    else if (!(map[current_x][current_y].walls & EAST) && (current_x < MAX_ARRAY_SIZE) && map[current_x + 1][current_y].visited == false) {
+    else if (!(map[current_x][current_y].walls & EAST) && (current_x < MAX_ARRAY_SIZE_X) && map[current_x + 1][current_y].visited == false) {
         struct coordinates east_coord = { current_x + 1, current_y };
         cellVisited(map, current_x + 1, current_y);
         push(stack, east_coord);
     }
-    else if (!(map[current_x][current_y].walls & SOUTH) && (current_y < MAX_ARRAY_SIZE) && map[current_x][current_y + 1].visited == false) {
+    else if (!(map[current_x][current_y].walls & SOUTH) && (current_y < MAX_ARRAY_SIZE_Y) && map[current_x][current_y + 1].visited == false) {
         struct coordinates south_coord = { current_x, current_y + 1 };
         cellVisited(map, current_x, current_y + 1);
         push(stack, south_coord);
@@ -325,13 +361,15 @@ void printQueueBackward(struct Queue* q) {
     printf("\n");
 }
 
-
-bool assign_cost_cell(struct cell map[MAX_SIZE][MAX_SIZE], struct Queue* q) {
+// Use of Breadth First Search to assign cost to each cell
+bool assign_cost_cell(struct cell map[MAX_SIZE_X][MAX_SIZE_Y], struct Queue* q) {
     int current_x = q->head->key->x_coord;
     int current_y = q->head->key->y_coord;
 
     int current_cost = map[current_x][current_y].cost;
     cellVisited(map, current_x, current_y);
+
+    // As long as adjacent cell is not a wall and has not been visited, it will be added to the queue with a +1 cost of the current cell
     if (!(map[current_x][current_y].walls & NORTH) && (current_y > MIN_ARRAY_SIZE) && map[current_x][current_y - 1].visited == false) {
         map[current_x][current_y - 1].cost = current_cost + 1;
         struct coordinates north_coord = { current_x, current_y - 1 };
@@ -339,14 +377,14 @@ bool assign_cost_cell(struct cell map[MAX_SIZE][MAX_SIZE], struct Queue* q) {
         enQueue(q, north_coord);
         if (map[current_x][current_y - 1].goal == true) return false;
     }
-    if (!(map[current_x][current_y].walls & EAST) && (current_x < MAX_ARRAY_SIZE) && map[current_x + 1][current_y].visited == false) {
+    if (!(map[current_x][current_y].walls & EAST) && (current_x < MAX_ARRAY_SIZE_X) && map[current_x + 1][current_y].visited == false) {
         map[current_x + 1][current_y].cost = current_cost + 1;
         struct coordinates east_coord = { current_x + 1, current_y };
         cellVisited(map, current_x + 1, current_y);
         enQueue(q, east_coord);
         if (map[current_x + 1][current_y].goal == true) return false;
     }
-    if (!(map[current_x][current_y].walls & SOUTH) && (current_y < MAX_ARRAY_SIZE) && map[current_x][current_y + 1].visited == false) {
+    if (!(map[current_x][current_y].walls & SOUTH) && (current_y < MAX_ARRAY_SIZE_Y) && map[current_x][current_y + 1].visited == false) {
         map[current_x][current_y + 1].cost = current_cost + 1;
         struct coordinates south_coord = { current_x, current_y + 1 };
         cellVisited(map, current_x, current_y + 1);
@@ -363,82 +401,98 @@ bool assign_cost_cell(struct cell map[MAX_SIZE][MAX_SIZE], struct Queue* q) {
     return true;
 }
 
-bool get_shortest_path(struct cell map[MAX_SIZE][MAX_SIZE], struct Queue* q) {
+// Backtracking to find the shortest path
+bool get_shortest_path(struct cell map[MAX_SIZE_X][MAX_SIZE_Y], struct Queue* q) {
     int current_x = q->tail->key->x_coord;
     int current_y = q->tail->key->y_coord;
 
+    // Depending on the directoin of check, as long as the cost is lower, it will be added to the queue
     if (!(map[current_x][current_y].walls & NORTH) && (current_y > MIN_ARRAY_SIZE) && (map[current_x][current_y - 1].cost < map[current_x][current_y].cost) && map[current_x][current_y - 1].visited == true) {
         struct coordinates north_coord = { current_x, current_y - 1 };
         enQueue(q, north_coord);
+        map[current_x][current_y].travelledDirection = '^';
         if (map[current_x][current_y - 1].cost == 0) return false;
     }
-    else if (!(map[current_x][current_y].walls & EAST) && (current_x < MAX_ARRAY_SIZE) && (map[current_x + 1][current_y].cost < map[current_x][current_y].cost) && map[current_x + 1][current_y].visited == true) {
+    else if (!(map[current_x][current_y].walls & EAST) && (current_x < MAX_ARRAY_SIZE_X) && (map[current_x + 1][current_y].cost < map[current_x][current_y].cost) && map[current_x + 1][current_y].visited == true) {
         struct coordinates east_coord = { current_x + 1, current_y };
         enQueue(q, east_coord);
+        map[current_x][current_y].travelledDirection = '>';
         if (map[current_x + 1][current_y].cost == 0) return false;
     }
-    else if (!(map[current_x][current_y].walls & SOUTH) && (current_y < MAX_ARRAY_SIZE) && (map[current_x][current_y + 1].cost < map[current_x][current_y].cost) && map[current_x][current_y + 1].visited == true) {
+    else if (!(map[current_x][current_y].walls & SOUTH) && (current_y < MAX_ARRAY_SIZE_Y) && (map[current_x][current_y + 1].cost < map[current_x][current_y].cost) && map[current_x][current_y + 1].visited == true) {
         struct coordinates south_coord = { current_x, current_y + 1 };
         enQueue(q, south_coord);
+        map[current_x][current_y].travelledDirection = 'v';
         if (map[current_x][current_y + 1].cost == 0) return false;
     }
     else if (!(map[current_x][current_y].walls & WEST) && (current_x > MIN_ARRAY_SIZE) && (map[current_x - 1][current_y].cost < map[current_x][current_y].cost) && map[current_x - 1][current_y].visited == true) {
         struct coordinates west_coord = { current_x - 1, current_y };
         enQueue(q, west_coord);
+        map[current_x][current_y].travelledDirection = '<';
         if (map[current_x - 1][current_y].cost == 0) return false;
     }
     return true;
 }
 
 int main() {
-    struct cell map[MAX_SIZE][MAX_SIZE];
+    stdio_init_all();
+    sleep_ms(5000);
+    struct cell map[MAX_SIZE_X][MAX_SIZE_Y];
     mapInit(map);
 
     // Manually Generate Map
-    setWall(map, 0, 0, DOWN);
-    setWall(map, 0, 1, RIGHT);
+    setWall(map, 0, 0, RIGHT);
+    setWall(map, 2, 0, DOWN);
+    setWall(map, 4, 0, DOWN);
     setWall(map, 1, 1, DOWN);
+    setWall(map, 2, 1, RIGHT);
+    setWall(map, 3, 1, RIGHT);
+    setWall(map, 4, 1, DOWN);
     setWall(map, 1, 2, RIGHT);
-    setWall(map, 2, 2, DOWN);
+    setWall(map, 1, 2, DOWN);
+    setWall(map, 2, 2, RIGHT);
+    setWall(map, 3, 2, RIGHT);
+    setWall(map, 5, 2, DOWN);
+    setWall(map, 0, 3, RIGHT);
     setWall(map, 2, 3, RIGHT);
-    setWall(map, 3, 3, DOWN);
-    setWall(map, 3, 4, RIGHT);
-    setWall(map, 4, 4, DOWN);
-    setWall(map, 4, 5, RIGHT);
-    setWall(map, 5, 5, DOWN);
-    setWall(map, 5, 6, RIGHT);
-    setWall(map, 6, 6, DOWN);
+    setWall(map, 3, 3, RIGHT);
 
+    // Initialize queue and stack using malloc
     struct Queue* q = createQueue();
     struct Stack* s = createStack();
 
-    struct coordinates start_coord = { 0, 8 }; // Choose Start Location
-    struct coordinates goal_coord = { 0, 0 }; // Choose Start Location
+    struct coordinates start_coord = { 0, 2 }; // Choose Start Location
+    struct coordinates goal_coord = { 5, 1 }; // Choose Start Location
     enQueue(q, start_coord);
     push(s, start_coord);
 
     setStart(map, start_coord.x_coord, start_coord.y_coord);
     setGoal(map, goal_coord.x_coord, goal_coord.y_coord);
 
+    printf("Mapping Alorithm:\n");
     while (explore_map(map, s)) {
-        //printVisitedMap(map);
-        //printf("\n");
+        printVisitedMap(map);
+        printf("\n");
     }
 
-    printVisitedMap(map);
-
     resetVisited(map);
+    resetDirection(map);
 
     while (assign_cost_cell(map, q)) {
         deQueue(q);
     }
 
-    printMap(map);
     clearQueueUntilOne(q);
 
     while (get_shortest_path(map, q));
 
+    printf("\nSolving Alorithm:\n");
+    printMap(map);
+
     printQueue(q);
 
     printQueueBackward(q);
+
+    while (true);
+    
 }
