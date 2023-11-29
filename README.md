@@ -30,11 +30,11 @@
 
 
 ## Block Diagram
-![alt overall_block](images/overall_block.png)
+![overall_block](images/overall_block.png)
 
 
 ## Contributions
-  - Demo: [driver](driver)
+  - Demo: [Driver](driver)
   - Partial Integration: [Partial Integration](partial_integration) | [Partial Integration Include](partial_integration_include)
   - Mapping Solution: [Maze Solving](driver/maze_solving)
 
@@ -74,8 +74,8 @@
   - [Partial Integration](partial_integration)
   - [Partial Integration Include](partial_integration_include)
 
-### Flow Chart & Block Diagrams
-  - [Images](images)
+### Documentations
+  - [Flowchart and Block Diagrams](images)
 
 ### Disclaimer
   - We did not attempt final run, thus [src](src) and [include](include) will not be used.
