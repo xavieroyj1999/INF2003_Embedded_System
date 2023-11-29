@@ -76,6 +76,7 @@
 
 ### Documentations
   - [Flowchart and Block Diagrams](images)
+  - [Function Brief](documentation)
 
 ### Disclaimer
   - We did not attempt final run, thus [src](src) and [include](include) will not be used.
