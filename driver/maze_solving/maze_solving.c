@@ -105,6 +105,7 @@ void cellVisited(struct cell map[MAX_SIZE_X][MAX_SIZE_Y], int x, int y) {
 
 void setStart(struct cell map[MAX_SIZE_X][MAX_SIZE_Y], int x, int y) {
     map[x][y].start = true;
+    map[x][y].visited = true;
     map[x][y].scannedWalls &= ~WEST;
 }
 
@@ -217,10 +218,6 @@ bool isStackEmpty(struct Stack* stack) {
 
 // Use of Depth First Search to explore the map
 bool explore_map(struct cell map[MAX_SIZE_X][MAX_SIZE_Y], struct Stack* stack) {
-    if (isStackEmpty(stack)) {
-        return false;
-    }
-
     int current_x = stack->top->data->x_coord;
     int current_y = stack->top->data->y_coord;
 
@@ -256,7 +253,6 @@ bool explore_map(struct cell map[MAX_SIZE_X][MAX_SIZE_Y], struct Stack* stack) {
     else {
         pop(stack);
     }
-    return true;
 }
 
 void printVisitedMap(struct cell map[MAX_SIZE_X][MAX_SIZE_Y], struct Stack* stack) {
@@ -485,10 +481,11 @@ int main() {
     setGoal(map, goal_coord.x_coord, goal_coord.y_coord);
 
     printf("Mapping Algorithm:\n");
-    while (explore_map(map, s)) {
+    while (!isStackEmpty(s)) {
         printf("Current Location: (%d, %d)\n", s->top->data->x_coord, s->top->data->y_coord);
         printVisitedMap(map, s);
         printf("\n");
+        explore_map(map, s);
     }
 
     resetVisited(map);
