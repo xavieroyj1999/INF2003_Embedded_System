@@ -488,6 +488,11 @@ int main() {
         explore_map(map, s);
     }
 
+    if (map[goal_coord.x_coord][goal_coord.y_coord].visited == false) {
+        printf("Goal is not reachable\n");
+        return 0;
+    }
+
     resetVisited(map);
     resetDirection(map);
 
